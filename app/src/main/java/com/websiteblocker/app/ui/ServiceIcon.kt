@@ -33,6 +33,7 @@ fun ServiceIcon(profile: ServiceProfile, size: Dp = 44.dp) {
         when (profile.id) {
             "instagram" -> R.drawable.brand_instagram
             "youtube" -> R.drawable.brand_youtube
+            "whatsapp" -> R.drawable.brand_whatsapp
             else -> null
         }
     // Prefer controlled transparent artwork for brands whose adaptive launcher icons can be
