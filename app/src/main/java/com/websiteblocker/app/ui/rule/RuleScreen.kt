@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -152,21 +153,18 @@ fun RuleScreen(
                     subtitle = "Choose one app or a website.",
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ServiceCatalog.popular.chunked(2).forEach { row ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            ) {
-                                row.forEach { profile ->
-                                    ServiceCard(
-                                        profile = profile,
-                                        selected = state.serviceId == profile.id,
-                                        enabled = !state.loading && !state.saving,
-                                        wide = row.size == 1,
-                                        onClick = { vm.service(profile.id) },
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            ServiceCatalog.popular.forEach { profile ->
+                                ServiceCard(
+                                    profile = profile,
+                                    selected = state.serviceId == profile.id,
+                                    enabled = !state.loading && !state.saving,
+                                    onClick = { vm.service(profile.id) },
+                                    modifier = Modifier.weight(1f),
+                                )
                             }
                         }
                         if (state.customSelected) {
@@ -402,13 +400,13 @@ private fun ServiceCard(
     profile: ServiceProfile,
     selected: Boolean,
     enabled: Boolean,
-    wide: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
         onClick = onClick,
         enabled = enabled,
+        shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.outlinedCardColors(
                 containerColor =
@@ -421,46 +419,16 @@ private fun ServiceCard(
                 if (selected) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.outlineVariant,
             ),
-        modifier = modifier.heightIn(min = 94.dp),
+        modifier =
+            modifier
+                .height(56.dp)
+                .semantics { contentDescription = "${profile.name}${if (selected) ", selected" else ""}" },
     ) {
-        if (wide) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                ServiceIcon(profile, 44.dp)
-                Text(
-                    profile.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                )
-                if (selected)
-                    Icon(
-                        Icons.Rounded.CheckCircle,
-                        contentDescription = "Selected",
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-            }
-        } else {
-            Box(Modifier.fillMaxWidth().padding(12.dp)) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ServiceIcon(profile, 40.dp)
-                    Text(
-                        profile.name,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-                if (selected)
-                    Icon(
-                        Icons.Rounded.CheckCircle,
-                        contentDescription = "Selected",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.align(Alignment.TopEnd),
-                    )
-            }
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            ServiceIcon(profile, 36.dp)
         }
     }
 }
