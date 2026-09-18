@@ -21,6 +21,7 @@ data class ProtectionState(
 
 class ProtectionController(private val context: Context) {
     private val preferences = context.getSharedPreferences("protection", Context.MODE_PRIVATE)
+    @Volatile private var silentRecoveryAttempted = false
     val desired
         get() = preferences.getBoolean("enabled", false)
 
@@ -34,6 +35,30 @@ class ProtectionController(private val context: Context) {
             else ProtectionState()
         )
     val state = mutableState.asStateFlow()
+
+    /**
+     * Restores a previously enabled tunnel without presenting UI when Android still retains VPN
+     * consent. One automatic attempt is made per interruption; a failed attempt deliberately falls
+     * back to the visible repair action instead of creating a restart loop.
+     */
+    @Synchronized
+    fun recoverIfPossible() {
+        if (
+            !desired ||
+                silentRecoveryAttempted ||
+                state.value.phase in listOf(ProtectionPhase.ON, ProtectionPhase.STARTING)
+        )
+            return
+        val consentRequired =
+            try {
+                VpnService.prepare(context) != null
+            } catch (_: RuntimeException) {
+                return
+            }
+        if (consentRequired) return
+        silentRecoveryAttempted = true
+        start()
+    }
 
     fun start() {
         if (state.value.phase in listOf(ProtectionPhase.ON, ProtectionPhase.STARTING)) return
@@ -76,6 +101,7 @@ class ProtectionController(private val context: Context) {
     }
 
     fun active() {
+        silentRecoveryAttempted = false
         mutableState.value = ProtectionState(ProtectionPhase.ON, "VPN protection is on")
     }
 

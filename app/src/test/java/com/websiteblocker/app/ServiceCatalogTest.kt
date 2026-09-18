@@ -17,7 +17,7 @@ class ServiceCatalogTest {
 
     @Test
     fun popularProfilesHaveStableUniqueTargets() {
-        assertEquals(4, ServiceCatalog.popular.map { it.id }.distinct().size)
+        assertEquals(5, ServiceCatalog.popular.map { it.id }.distinct().size)
         ServiceCatalog.popular.forEach { profile ->
             assertTrue(profile.name.isNotBlank())
             assertTrue(profile.domains.isNotEmpty())
@@ -31,6 +31,15 @@ class ServiceCatalogTest {
         assertTrue(ServiceCatalog.matches("i.instagram.com", instagram))
         assertTrue(ServiceCatalog.matches("scontent.cdninstagram.com", instagram))
         assertFalse(ServiceCatalog.matches("example.com", instagram))
+    }
+
+    @Test
+    fun youtubeRuleMatchesWebAndApiHosts() {
+        val youtube = rule("youtube")
+        assertTrue(ServiceCatalog.matches("www.youtube.com", youtube))
+        assertTrue(ServiceCatalog.matches("rr1---sn.googlevideo.com", youtube))
+        assertTrue(ServiceCatalog.matches("youtubei.googleapis.com", youtube))
+        assertFalse(ServiceCatalog.matches("google.com", youtube))
     }
 
     @Test
@@ -48,5 +57,9 @@ class ServiceCatalogTest {
         assertTrue(ServiceCatalog.matchesPackage("com.whatsapp.w4b", whatsapp))
         assertFalse(ServiceCatalog.matchesPackage("com.instagram.android", whatsapp))
         assertFalse(ServiceCatalog.matchesPackage("com.whatsapp", rule()))
+
+        val youtube = rule("youtube")
+        assertTrue(ServiceCatalog.matchesPackage("com.google.android.youtube", youtube))
+        assertFalse(ServiceCatalog.matchesPackage("com.google.android.apps.youtube.music", youtube))
     }
 }

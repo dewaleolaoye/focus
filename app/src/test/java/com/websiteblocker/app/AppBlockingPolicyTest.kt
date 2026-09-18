@@ -23,7 +23,7 @@ class AppBlockingPolicyTest {
     fun activePopularRulesReturnEveryKnownPackageVariant() {
         val packages =
             AppBlockingPolicy.activePackages(
-                listOf(rule("instagram"), rule("x"), rule("facebook")),
+                listOf(rule("instagram"), rule("x"), rule("facebook"), rule("youtube")),
                 now,
             )
         assertTrue("com.instagram.android" in packages)
@@ -31,6 +31,9 @@ class AppBlockingPolicyTest {
         assertTrue("com.twitter.android" in packages)
         assertTrue("com.facebook.katana" in packages)
         assertTrue("com.facebook.lite" in packages)
+        assertTrue("com.google.android.youtube" in packages)
+        assertTrue("com.google.android.youtube.go" in packages)
+        assertTrue("com.google.android.youtube.tv" in packages)
     }
 
     @Test

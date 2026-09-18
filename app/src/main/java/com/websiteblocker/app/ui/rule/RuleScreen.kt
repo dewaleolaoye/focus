@@ -162,6 +162,7 @@ fun RuleScreen(
                                         profile = profile,
                                         selected = state.serviceId == profile.id,
                                         enabled = !state.loading && !state.saving,
+                                        wide = row.size == 1,
                                         onClick = { vm.service(profile.id) },
                                         modifier = Modifier.weight(1f),
                                     )
@@ -401,6 +402,7 @@ private fun ServiceCard(
     profile: ServiceProfile,
     selected: Boolean,
     enabled: Boolean,
+    wide: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -421,18 +423,43 @@ private fun ServiceCard(
             ),
         modifier = modifier.heightIn(min = 94.dp),
     ) {
-        Box(Modifier.fillMaxWidth().padding(12.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                ServiceIcon(profile, 40.dp)
-                Text(profile.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            }
-            if (selected) {
-                Icon(
-                    Icons.Rounded.CheckCircle,
-                    contentDescription = "Selected",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.align(Alignment.TopEnd),
+        if (wide) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                ServiceIcon(profile, 44.dp)
+                Text(
+                    profile.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
                 )
+                if (selected)
+                    Icon(
+                        Icons.Rounded.CheckCircle,
+                        contentDescription = "Selected",
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+            }
+        } else {
+            Box(Modifier.fillMaxWidth().padding(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ServiceIcon(profile, 40.dp)
+                    Text(
+                        profile.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                if (selected)
+                    Icon(
+                        Icons.Rounded.CheckCircle,
+                        contentDescription = "Selected",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.TopEnd),
+                    )
             }
         }
     }

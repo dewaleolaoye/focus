@@ -29,6 +29,22 @@ import com.websiteblocker.app.domain.ServiceProfile
 @Composable
 fun ServiceIcon(profile: ServiceProfile, size: Dp = 44.dp) {
     val context = LocalContext.current
+    val bundledIcon =
+        when (profile.id) {
+            "instagram" -> R.drawable.brand_instagram
+            "youtube" -> R.drawable.brand_youtube
+            else -> null
+        }
+    // Prefer controlled transparent artwork for brands whose adaptive launcher icons can be
+    // rendered by Android with an unwanted white plate around them.
+    if (bundledIcon != null) {
+        Image(
+            painter = painterResource(bundledIcon),
+            contentDescription = "${profile.name} icon",
+            modifier = Modifier.size(size),
+        )
+        return
+    }
     val installedIcon =
         remember(profile.id) {
             profile.androidPackages.firstNotNullOfOrNull { packageName ->
@@ -45,14 +61,6 @@ fun ServiceIcon(profile: ServiceProfile, size: Dp = 44.dp) {
                 }
             },
             update = { it.setImageDrawable(installedIcon) },
-            modifier = Modifier.size(size),
-        )
-        return
-    }
-    if (profile.id == "instagram") {
-        Image(
-            painter = painterResource(R.drawable.brand_instagram),
-            contentDescription = "Instagram icon",
             modifier = Modifier.size(size),
         )
         return

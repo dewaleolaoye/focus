@@ -50,6 +50,26 @@ object ServiceCatalog {
                 domains = linkedSetOf("x.com", "twitter.com", "twimg.com", "t.co"),
                 androidPackages = setOf("com.twitter.android"),
             ),
+            ServiceProfile(
+                id = "youtube",
+                name = "YouTube",
+                monogram = "▶",
+                domains =
+                    linkedSetOf(
+                        "youtube.com",
+                        "youtu.be",
+                        "googlevideo.com",
+                        "ytimg.com",
+                        "youtube-nocookie.com",
+                        "youtubei.googleapis.com",
+                    ),
+                androidPackages =
+                    setOf(
+                        "com.google.android.youtube",
+                        "com.google.android.youtube.go",
+                        "com.google.android.youtube.tv",
+                    ),
+            ),
         )
 
     fun find(id: String?) = popular.firstOrNull { it.id == id }

@@ -48,10 +48,12 @@ class MainActivity : ComponentActivity() {
                 }
                 DisposableEffect(lifecycleOwner) {
                     val observer = LifecycleEventObserver { _, event ->
-                        if (event == Lifecycle.Event.ON_RESUME)
+                        if (event == Lifecycle.Event.ON_RESUME) {
                             appBlockingEnabled =
                                 BuildConfig.ACCESSIBILITY_APP_BLOCKING &&
                                     AppBlockingAccess.isEnabled(this@MainActivity)
+                            app.protection.recoverIfPossible()
+                        }
                     }
                     lifecycleOwner.lifecycle.addObserver(observer)
                     onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
