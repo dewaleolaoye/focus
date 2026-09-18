@@ -36,7 +36,11 @@ class WebsiteBlockVpnService : VpnService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == STOP) {
-            app.protection.stop()
+            job?.cancel()
+            job = null
+            runCatching { tunnel?.close() }
+            tunnel = null
+            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
         }
@@ -45,7 +49,13 @@ class WebsiteBlockVpnService : VpnService() {
             stopSelf()
             return START_NOT_STICKY
         }
-        if (job?.isActive == true) return START_STICKY
+        if (job?.isActive == true) {
+            // The system can keep a VPN service bound while its started state changes. If the
+            // tunnel is already running, report the real enforcement state instead of leaving
+            // the UI indefinitely in STARTING.
+            app.protection.active()
+            return START_STICKY
+        }
         try {
             val notification = VpnNotificationManager(this).notification()
             if (Build.VERSION.SDK_INT >= 34)

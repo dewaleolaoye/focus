@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -44,6 +45,7 @@ fun SettingsScreen(
     appBlockingAvailable: Boolean,
     appBlockingEnabled: Boolean,
     back: () -> Unit,
+    enable: () -> Unit,
     stop: () -> Unit,
     enableAppBlocking: () -> Unit,
 ) {
@@ -61,7 +63,7 @@ fun SettingsScreen(
         },
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize().padding(padding).navigationBarsPadding(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -89,8 +91,12 @@ fun SettingsScreen(
                             )
                         }
                         Text(
-                            if (protection.phase == ProtectionPhase.ON) "Protection is on"
-                            else "Protection needs attention",
+                            when (protection.phase) {
+                                ProtectionPhase.ON -> "Protection is on"
+                                ProtectionPhase.OFF -> "Protection is off"
+                                ProtectionPhase.STARTING -> "Starting protection"
+                                ProtectionPhase.NEEDS_REACTIVATION -> "Protection needs attention"
+                            },
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                         )
@@ -100,6 +106,16 @@ fun SettingsScreen(
                                 onClick = stop,
                                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
                             ) { Text("Turn off blocking") }
+                        } else if (protection.phase != ProtectionPhase.STARTING) {
+                            Button(
+                                onClick = enable,
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                            ) {
+                                Text(
+                                    if (protection.phase == ProtectionPhase.OFF) "Enable Blocking"
+                                    else "Fix protection"
+                                )
+                            }
                         }
                     }
                 }

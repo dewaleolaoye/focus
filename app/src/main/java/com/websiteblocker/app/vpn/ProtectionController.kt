@@ -62,8 +62,17 @@ class ProtectionController(private val context: Context) {
 
     fun stop() {
         preferences.edit { putBoolean("enabled", false) }
-        context.stopService(Intent(context, WebsiteBlockVpnService::class.java))
         mutableState.value = ProtectionState()
+        val stopIntent =
+            Intent(context, WebsiteBlockVpnService::class.java)
+                .setAction(WebsiteBlockVpnService.STOP)
+        try {
+            // A VPN service may remain system-bound after stopService(). Send an explicit command
+            // so it closes the tunnel and cancels enforcement before removing the service.
+            context.startService(stopIntent)
+        } catch (_: RuntimeException) {
+            context.stopService(Intent(context, WebsiteBlockVpnService::class.java))
+        }
     }
 
     fun active() {

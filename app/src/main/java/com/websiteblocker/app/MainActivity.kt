@@ -89,8 +89,6 @@ class MainActivity : ComponentActivity() {
                             edit = { nav.navigate("rule/$it") },
                             enable = { explanation = true },
                             settings = { nav.navigate("settings") },
-                            toggle = home::setEnabled,
-                            delete = home::delete,
                             dismissError = home::dismissError,
                         )
                     }
@@ -101,6 +99,7 @@ class MainActivity : ComponentActivity() {
                             appBlockingAvailable = BuildConfig.ACCESSIBILITY_APP_BLOCKING,
                             appBlockingEnabled = appBlockingEnabled,
                             back = { nav.popBackStack() },
+                            enable = { explanation = true },
                             stop = {
                                 app.protection.stop()
                                 nav.popBackStack()
@@ -124,13 +123,20 @@ class MainActivity : ComponentActivity() {
                                             RuleViewModel(
                                                 id,
                                                 app.repository,
+                                                app.protection,
                                                 createSavedStateHandle(),
                                             )
                                         }
                                     }
                             )
                         val state by vm.state.collectAsStateWithLifecycle()
-                        RuleScreen(state, id != 0L, vm) { nav.popBackStack() }
+                        RuleScreen(
+                            state = state,
+                            editing = id != 0L,
+                            vm = vm,
+                            enableProtection = { explanation = true },
+                            back = { nav.popBackStack() },
+                        )
                     }
                 }
                 if (explanation)

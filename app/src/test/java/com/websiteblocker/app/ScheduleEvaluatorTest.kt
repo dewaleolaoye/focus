@@ -90,4 +90,41 @@ class ScheduleEvaluatorTest {
             )
         }
     }
+
+    @Test
+    fun nextOccurrenceUsesTheNextSelectedStartDay() {
+        val now = ZonedDateTime.parse("2026-09-14T18:00:00Z")
+        val next = ScheduleEvaluator.nextOccurrence(same.copy(daysMask = 3), now)
+        assertEquals(ZonedDateTime.parse("2026-09-15T09:00:00Z"), next?.start)
+        assertEquals(ZonedDateTime.parse("2026-09-15T17:00:00Z"), next?.end)
+    }
+
+    @Test
+    fun nextOccurrenceWrapsAcrossTheWeek() {
+        val now = ZonedDateTime.parse("2026-09-14T18:00:00Z")
+        val next = ScheduleEvaluator.nextOccurrence(same, now)
+        assertEquals(ZonedDateTime.parse("2026-09-21T09:00:00Z"), next?.start)
+    }
+
+    @Test
+    fun overlappingRulesRemainContinuouslyActiveUntilTheLastEnd() {
+        val first = same.copy(startMinute = 20 * 60, endMinute = 23 * 60, daysMask = 1)
+        val second = same.copy(startMinute = 22 * 60, endMinute = 60, daysMask = 1)
+        val now = ZonedDateTime.parse("2026-09-14T22:30:00Z")
+        assertEquals(
+            ZonedDateTime.parse("2026-09-15T01:00:00Z"),
+            ScheduleEvaluator.continuousActiveEnd(listOf(first, second), now),
+        )
+    }
+
+    @Test
+    fun aGapDoesNotExtendTheCurrentBlockingPeriod() {
+        val first = same.copy(startMinute = 20 * 60, endMinute = 21 * 60, daysMask = 1)
+        val second = same.copy(startMinute = 22 * 60, endMinute = 23 * 60, daysMask = 1)
+        val now = ZonedDateTime.parse("2026-09-14T20:30:00Z")
+        assertEquals(
+            ZonedDateTime.parse("2026-09-14T21:00:00Z"),
+            ScheduleEvaluator.continuousActiveEnd(listOf(first, second), now),
+        )
+    }
 }

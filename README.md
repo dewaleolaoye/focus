@@ -39,8 +39,8 @@ Play/internal-testing APK: `app/build/outputs/apk/play/debug/app-play-debug.apk`
 
 3. Tap **Enable Blocking**, read the privacy explanation, then **Continue**, and accept Android's VPN connection request. Allow notifications for a visible persistent status notification.
 4. In the Play/internal-testing edition only, tap **Enable app blocking**, choose **App blocking** in Android Accessibility settings, read the system disclosure, and explicitly enable it. The service observes only foreground package changes; it cannot retrieve window content.
-5. Add X from **Popular services**. Select all days, a start before the current local time and an end after it. Save. Check the home screen says **Protection is on** and shows X in the bento grid.
-6. Follow [the physical-device test matrix](docs/MANUAL_TEST_PLAN.md). Foreground package enforcement applies only to the Play/internal-testing edition; the sideload edition relies on bundled DNS targets.
+5. Add X from the popular apps. Select all days, a start before the current local time and an end after it. Save. Check the home screen says **Protection is on** and marks X **Active**.
+6. Follow [the physical-device test matrix](docs/MANUAL_TEST_PLAN.md). Both editions use package-scoped VPN routing for installed popular apps; the Play edition adds optional foreground Accessibility enforcement.
 
 Do not enable Android's **Block connections without VPN** option: Focus switches between package-scoped app blocking and split DNS website blocking; it is not a general full-traffic VPN. Always-on VPN is explicitly unsupported in this MVP.
 
@@ -49,12 +49,13 @@ Do not enable Android's **Block connections without VPN** option: Focus switches
 - `data/model`, `data/local`, `data/repository`: Room entity, DAO Flow, database and validated writes. The version 1→2 migration preserves existing custom website schedules while adding an optional service profile ID.
 - `domain`: pure hostname normalization and local-time schedule evaluation. Monday is bit 0, Sunday bit 6. Start inclusive, end exclusive; overnight days refer to the start day. Equal times are rejected.
 - `domain/ServiceCatalog`: stable popular-service IDs mapped to friendly names, centralized domain bundles and known Android package variants. The UI never exposes this infrastructure detail.
+- `data/website`: discovers a custom site's declared favicon directly from that site, falls back to common icon paths, validates and downsamples the image, then caches it locally. Failed lookups use the globe fallback and are retried after a bounded negative-cache period; no third-party favicon service receives the saved domain.
 - `accessibility`: the `play` flavor adds optional foreground-package enforcement for popular-service schedules. When a selected app opens during quiet hours, the service returns to Home. The `sideload` flavor does not compile or declare this service.
 - `vpn/DnsPacketHandler`: bounds-checked IPv4/UDP codec, DNS question extraction, failure replies, upstream response validation and IPv4 checksums.
 - `vpn/WebsiteBlockVpnService`: switches between two VPN policies as schedules change. Popular-service schedules create a package allowlist with full IPv4/IPv6 routes and discard every packet from the selected installed apps. When no installed-app schedule is active, the service uses the DNS-only split tunnel at `10.111.0.2/32` for custom website filtering. Rules and local time are observed continuously and policy changes apply within about one second.
 - `vpn/ProtectionController`: desired protection is persisted separately from actual process-local service status. A new process never reports a stale persisted “on” state. Stop, consent denial, revocation and startup failures have explicit states.
 - `receiver/BootReceiver`: attempts restoration after boot/app update when protection was enabled. Runtime restrictions and missing consent leave reactivation status instead of crashing.
-- `ui`: lifecycle-aware flows, gated first-run setup, bento home dashboard, Settings explainer, SavedStateHandle-backed editor, inline validation, deletion confirmation, 12/24-hour display and light/dark palettes.
+- `ui`: lifecycle-aware flows, gated first-run setup, compact state-accurate dashboard, installed or bundled app branding, cached website favicons, Settings explainer, SavedStateHandle-backed editor, inline validation, deletion confirmation, 12/24-hour display and light/dark palettes.
 
 ## DNS and privacy
 

@@ -7,9 +7,18 @@ import com.websiteblocker.app.data.model.BlockRule
 import com.websiteblocker.app.data.repository.BlockRuleRepository
 import com.websiteblocker.app.domain.DomainNormalizer
 import com.websiteblocker.app.domain.ServiceCatalog
+import com.websiteblocker.app.vpn.ProtectionController
+import com.websiteblocker.app.vpn.ProtectionPhase
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+enum class RuleCompletion {
+    SAVED,
+    DELETED,
+}
 
 data class RuleState(
     val domain: String = "",
@@ -19,32 +28,54 @@ data class RuleState(
     val end: Int = 7 * 60,
     val days: Int = 127,
     val enabled: Boolean = true,
+    val protectionPhase: ProtectionPhase = ProtectionPhase.OFF,
     val loading: Boolean = false,
     val saving: Boolean = false,
-    val saved: Boolean = false,
+    val completion: RuleCompletion? = null,
     val domainError: String? = null,
     val targetError: String? = null,
     val timeError: String? = null,
     val daysError: String? = null,
     val error: String? = null,
-)
+) {
+    val canSave: Boolean
+        get() =
+            !loading &&
+                !saving &&
+                (serviceId != null ||
+                    (customSelected && runCatching { DomainNormalizer.normalize(domain) }.isSuccess)) &&
+                start != end &&
+                days != 0
+}
 
 class RuleViewModel(
     private val id: Long,
     private val repository: BlockRuleRepository,
+    private val protection: ProtectionController,
     private val handle: SavedStateHandle,
 ) : ViewModel() {
-    private val mutable = MutableStateFlow(RuleState(loading = id != 0L))
+    private val mutable =
+        MutableStateFlow(
+            RuleState(
+                loading = id != 0L,
+                protectionPhase = protection.state.value.phase,
+            )
+        )
     val state = mutable.asStateFlow()
 
     init {
         viewModelScope.launch {
+            protection.state.collect { protectionState ->
+                mutable.update { it.copy(protectionPhase = protectionState.phase) }
+            }
+        }
+        viewModelScope.launch {
             try {
                 val rule =
-                    if (id != 0L) repository.find(id) ?: error("This rule no longer exists.")
+                    if (id != 0L) repository.find(id) ?: error("This schedule no longer exists.")
                     else null
-                mutable.value =
-                    RuleState(
+                mutable.update {
+                    it.copy(
                         domain = handle["domain"] ?: rule?.domain.orEmpty(),
                         serviceId = handle["serviceId"] ?: rule?.serviceId,
                         customSelected =
@@ -53,19 +84,25 @@ class RuleViewModel(
                         end = handle["end"] ?: rule?.endMinute ?: 420,
                         days = handle["days"] ?: rule?.daysMask ?: 127,
                         enabled = handle["enabled"] ?: rule?.enabled ?: true,
+                        loading = false,
                     )
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                mutable.value =
-                    RuleState(error = "Could not load this rule. Return home and try again.")
+                mutable.update {
+                    it.copy(
+                        loading = false,
+                        error = "Could not load this schedule. Return home and try again.",
+                    )
+                }
             }
         }
     }
 
     fun domain(value: String) {
         handle["domain"] = value
-        mutable.update { it.copy(domain = value, domainError = null) }
+        mutable.update { it.copy(domain = value, domainError = null, error = null) }
     }
 
     fun service(id: String) {
@@ -80,6 +117,7 @@ class RuleViewModel(
                 customSelected = false,
                 domainError = null,
                 targetError = null,
+                error = null,
             )
         }
     }
@@ -96,28 +134,44 @@ class RuleViewModel(
                 customSelected = true,
                 domainError = null,
                 targetError = null,
+                error = null,
+            )
+        }
+    }
+
+    fun clearTarget() {
+        handle["serviceId"] = null
+        handle["customSelected"] = false
+        handle["domain"] = ""
+        mutable.update {
+            it.copy(
+                domain = "",
+                serviceId = null,
+                customSelected = false,
+                domainError = null,
+                targetError = null,
             )
         }
     }
 
     fun start(value: Int) {
         handle["start"] = value
-        mutable.update { it.copy(start = value, timeError = null) }
+        mutable.update { it.copy(start = value, timeError = null, error = null) }
     }
 
     fun end(value: Int) {
         handle["end"] = value
-        mutable.update { it.copy(end = value, timeError = null) }
+        mutable.update { it.copy(end = value, timeError = null, error = null) }
     }
 
     fun days(value: Int) {
         handle["days"] = value
-        mutable.update { it.copy(days = value, daysError = null) }
+        mutable.update { it.copy(days = value, daysError = null, error = null) }
     }
 
     fun enabled(value: Boolean) {
         handle["enabled"] = value
-        mutable.update { it.copy(enabled = value) }
+        mutable.update { it.copy(enabled = value, error = null) }
     }
 
     fun save() {
@@ -125,14 +179,14 @@ class RuleViewModel(
         if (value.loading || value.saving) return
         val profile = ServiceCatalog.find(value.serviceId)
         val targetError =
-            if (profile == null && !value.customSelected) "Choose a service or custom website."
+            if (profile == null && !value.customSelected) "Choose an app or custom website."
             else null
         val domain =
             if (profile != null) Result.success(profile.primaryDomain)
             else if (value.customSelected) runCatching { DomainNormalizer.normalize(value.domain) }
             else Result.failure(IllegalArgumentException("Choose what you want to block."))
         val timeError =
-            if (value.start == value.end) "Start and end times must be different." else null
+            if (value.start == value.end) "Start and stop times must be different." else null
         val daysError = if (value.days == 0) "Select at least one day." else null
         mutable.update {
             it.copy(
@@ -149,21 +203,41 @@ class RuleViewModel(
             try {
                 repository.save(
                     BlockRule(
-                        id,
-                        domain.getOrThrow(),
-                        value.start,
-                        value.end,
-                        value.days,
-                        value.enabled,
-                        profile?.id,
+                        id = id,
+                        domain = domain.getOrThrow(),
+                        startMinute = value.start,
+                        endMinute = value.end,
+                        daysMask = value.days,
+                        enabled = value.enabled,
+                        serviceId = profile?.id,
                     )
                 )
-                mutable.update { it.copy(saving = false, saved = true) }
+                mutable.update { it.copy(saving = false, completion = RuleCompletion.SAVED) }
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
                 mutable.update {
-                    it.copy(saving = false, error = "Could not save the rule. Please try again.")
+                    it.copy(
+                        saving = false,
+                        error = "Could not save this schedule. Check the details and try again.",
+                    )
+                }
+            }
+        }
+    }
+
+    fun delete() {
+        if (id == 0L || mutable.value.saving) return
+        mutable.update { it.copy(saving = true, error = null) }
+        viewModelScope.launch {
+            try {
+                repository.delete(id)
+                mutable.update { it.copy(saving = false, completion = RuleCompletion.DELETED) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                mutable.update {
+                    it.copy(saving = false, error = "Could not delete this schedule. Try again.")
                 }
             }
         }
