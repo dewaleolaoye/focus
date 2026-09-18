@@ -7,11 +7,13 @@ room = "2.8.4"
 lifecycle = "2.10.0"
 navigation = "2.9.8"
 coroutines = "1.10.2"
+play-services-ads = "23.6.0"
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 [libraries]
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "play-services-ads" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-icons = { module = "androidx.compose.material:material-icons-extended" }

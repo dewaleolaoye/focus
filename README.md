@@ -63,7 +63,7 @@ When no installed-app schedule is active, the virtual DNS address is the only IP
 
 Matching requests receive local NXDOMAIN and are never sent upstream. Allowed requests use DNS servers from the selected underlying network's LinkProperties. Validated foreground networks are preferred, and another reported underlying network can be tried if socket access fails. Only when none is usable is Cloudflare's public `1.1.1.1` used; this is a public resolver, not an application-owned server. If configured resolvers time out, the service returns SERVFAIL instead of silently switching to a third-party resolver. Wi-Fi/mobile transitions are handled by looking up the underlying network and its DNS servers for each request.
 
-No browsing history, per-query storage, domain logs, analytics, advertising, account or remote backend. Only user-entered rules and the protection setting are persisted. Legacy backup is disabled and modern backup rules exclude all domains from cloud backup and device transfer. Allowed DNS lookups are visible to the selected network DNS resolver in the same way ordinary unencrypted DNS is.
+No browsing history, per-query storage, domain logs, account or remote backend. Only user-entered rules and the protection setting are persisted locally. Legacy backup is disabled and modern backup rules exclude all domains from cloud backup and device transfer. Allowed DNS lookups are visible to the selected network DNS resolver in the same way ordinary unencrypted DNS is. An anchored adaptive banner is displayed on the main dashboard via Google AdMob.
 
 ## Deliberate MVP limits
 

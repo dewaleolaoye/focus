@@ -133,7 +133,7 @@ fun SettingsScreen(
                     icon = { Icon(Icons.Rounded.PrivacyTip, contentDescription = null) },
                     title = "Private by design",
                     body =
-                        "Focus does not collect browsing history or send your schedules to a server. Your rules stay on this device.",
+                        "Focus does not collect browsing history or send your schedules to a server. Your rules stay on this device. Dashboard ads are served by Google AdMob.",
                 )
             }
             item {

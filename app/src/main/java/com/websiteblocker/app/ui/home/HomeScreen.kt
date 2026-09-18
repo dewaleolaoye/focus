@@ -57,6 +57,7 @@ import com.websiteblocker.app.ui.WebsiteIcon
 import com.websiteblocker.app.ui.formatDuration
 import com.websiteblocker.app.ui.formatTime
 import com.websiteblocker.app.ui.formatUpcoming
+import com.websiteblocker.app.ui.ads.AnchoredAdaptiveBanner
 import com.websiteblocker.app.vpn.ProtectionPhase
 
 @Composable
@@ -185,61 +186,79 @@ private fun Dashboard(
 ) {
     val context = LocalContext.current
     val is24 = DateFormat.is24HourFormat(context)
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(contentPadding).navigationBarsPadding(),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(contentPadding)
     ) {
-        item { BrandHeader(settings) }
-        if (state.loading) {
-            item { LoadingCard() }
-        } else {
-            item {
-                ProtectionSummaryCard(
-                    state = state,
-                    enable = enable,
-                    settings = settings,
-                )
-            }
-            if (state.rows.isEmpty()) {
-                item { EmptySchedules(add) }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            // Extra bottom padding (80.dp) ensures list items and "Add schedule" button
+            // are never covered or obscured by the anchored adaptive banner
+            contentPadding = PaddingValues(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 84.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            item { BrandHeader(settings) }
+            if (state.loading) {
+                item { LoadingCard() }
             } else {
                 item {
-                    BlockingSummaryCard(
+                    ProtectionSummaryCard(
                         state = state,
-                        is24 = is24,
-                        onClick = {
-                            val row =
-                                when (state.dashboardStatus) {
-                                    DashboardStatus.ACTIVE ->
-                                        state.rows.firstOrNull { it.status == RuleUiStatus.ACTIVE }
-                                    DashboardStatus.IDLE ->
-                                        state.rows.filter { it.nextStart != null }
-                                            .minByOrNull { it.nextStart!! }
-                                    else -> null
-                                }
-                            if (row != null) edit(row.rule.id) else settings()
-                        },
+                        enable = enable,
+                        settings = settings,
                     )
                 }
-                item {
-                    Text(
-                        "Schedules",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
+                if (state.rows.isEmpty()) {
+                    item { EmptySchedules(add) }
+                } else {
+                    item {
+                        BlockingSummaryCard(
+                            state = state,
+                            is24 = is24,
+                            onClick = {
+                                val row =
+                                    when (state.dashboardStatus) {
+                                        DashboardStatus.ACTIVE ->
+                                            state.rows.firstOrNull { it.status == RuleUiStatus.ACTIVE }
+                                        DashboardStatus.IDLE ->
+                                            state.rows.filter { it.nextStart != null }
+                                                .minByOrNull { it.nextStart!! }
+                                        else -> null
+                                    }
+                                if (row != null) edit(row.rule.id) else settings()
+                            },
+                        )
+                    }
+                    item {
+                        Text(
+                            "Schedules",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                    items(state.rows, key = { it.rule.id }) { row ->
+                        TargetScheduleRow(
+                            row = row,
+                            now = state.now,
+                            is24 = is24,
+                            onClick = { edit(row.rule.id) },
+                        )
+                    }
+                    item { AddScheduleButton(add) }
                 }
-                items(state.rows, key = { it.rule.id }) { row ->
-                    TargetScheduleRow(
-                        row = row,
-                        now = state.now,
-                        is24 = is24,
-                        onClick = { edit(row.rule.id) },
-                    )
-                }
-                item { AddScheduleButton(add) }
             }
+        }
+
+        // Anchored adaptive banner at bottom of dashboard, above system navigation bar
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .navigationBarsPadding()
+        ) {
+            AnchoredAdaptiveBanner()
         }
     }
 }
