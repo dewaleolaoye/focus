@@ -36,8 +36,7 @@ android {
     }
     buildTypes {
         debug {
-            // Google official test banner ad unit ID to avoid invalid traffic penalties
-            buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/6300978111\"")
+            buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID", "\"ca-app-pub-7311844816795976/3006812958\"")
         }
         release {
             buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID", "\"ca-app-pub-7311844816795976/3006812958\"")
