@@ -25,7 +25,7 @@ internal object FaviconFetcher {
         }.distinctBy(URL::toString)
 
         return candidates.asSequence()
-            .filter { it.protocol == "https" || it.protocol == "http" }
+            .filter { it.protocol == "https" }
             .take(8)
             .mapNotNull { download(it, MAX_ICON_BYTES, "image/*") }
             .filter(isUsable)
@@ -46,13 +46,14 @@ internal object FaviconFetcher {
         }.toList()
 
     private fun download(url: URL, limit: Int, accept: String): ByteArray? {
+        if (url.protocol != "https") return null
         val connection = (url.openConnection() as? HttpURLConnection) ?: return null
         return try {
             connection.instanceFollowRedirects = true
             connection.connectTimeout = 3_000
             connection.readTimeout = 4_000
             connection.setRequestProperty("Accept", accept)
-            connection.setRequestProperty("User-Agent", "Focus/1.2 Android favicon fetcher")
+            connection.setRequestProperty("User-Agent", "Focus/1.3 Android favicon fetcher")
             if (connection.responseCode !in 200..299) return null
             if (connection.contentLengthLong > limit) return null
             connection.inputStream.use { input ->

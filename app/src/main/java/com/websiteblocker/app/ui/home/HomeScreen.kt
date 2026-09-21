@@ -68,6 +68,9 @@ fun HomeScreen(
     enable: () -> Unit,
     settings: () -> Unit,
     dismissError: () -> Unit,
+    privacy: () -> Unit,
+    appBlockingEnabled: Boolean,
+    enableAppBlocking: () -> Unit,
 ) {
     val firstRun =
         !state.loading &&
@@ -79,6 +82,7 @@ fun HomeScreen(
                 phase = state.protection.phase,
                 message = state.protection.message,
                 enable = enable,
+                privacy = privacy,
                 contentPadding = padding,
             )
         } else {
@@ -89,6 +93,8 @@ fun HomeScreen(
                 enable = enable,
                 settings = settings,
                 contentPadding = padding,
+                appBlockingEnabled = appBlockingEnabled,
+                enableAppBlocking = enableAppBlocking,
             )
         }
     }
@@ -104,6 +110,7 @@ fun HomeScreen(
 
 @Composable
 private fun FirstRunHome(
+    privacy: () -> Unit,
     phase: ProtectionPhase,
     message: String,
     enable: () -> Unit,
@@ -115,6 +122,7 @@ private fun FirstRunHome(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { BrandHeader() }
+        item { TextButton(onClick = privacy) { Text("Privacy policy") } }
         item {
             Surface(
                 shape = RoundedCornerShape(28.dp),
@@ -183,6 +191,8 @@ private fun Dashboard(
     enable: () -> Unit,
     settings: () -> Unit,
     contentPadding: PaddingValues,
+    appBlockingEnabled: Boolean,
+    enableAppBlocking: () -> Unit,
 ) {
     val context = LocalContext.current
     val is24 = DateFormat.is24HourFormat(context)
@@ -205,9 +215,24 @@ private fun Dashboard(
                 item {
                     ProtectionSummaryCard(
                         state = state,
+                        appBlockingEnabled = appBlockingEnabled,
                         enable = enable,
                         settings = settings,
                     )
+                }
+                if (!appBlockingEnabled && state.rows.any { it.rule.serviceId != null && it.rule.enabled }) {
+                    item {
+                        Surface(
+                            shape = RoundedCornerShape(24.dp),
+                            color = MaterialTheme.colorScheme.errorContainer,
+                        ) {
+                            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("App blocking needs setup", style = MaterialTheme.typography.titleMedium)
+                                Text("Website protection uses the VPN. To block Instagram, WhatsApp, Facebook, X, TikTok and YouTube apps, enable App blocking in Android Accessibility settings.")
+                                Button(onClick = enableAppBlocking) { Text("Enable app blocking") }
+                            }
+                        }
+                    }
                 }
                 if (state.rows.isEmpty()) {
                     item { EmptySchedules(add) }
@@ -266,6 +291,7 @@ private fun Dashboard(
 @Composable
 private fun ProtectionSummaryCard(
     state: HomeState,
+    appBlockingEnabled: Boolean,
     enable: () -> Unit,
     settings: () -> Unit,
 ) {
@@ -278,7 +304,12 @@ private fun ProtectionSummaryCard(
             DashboardStatus.NEEDS_ATTENTION -> Icons.Rounded.ErrorOutline
             else -> Icons.Rounded.Shield
         }
-    when (state.dashboardStatus) {
+    if (state.protection.phase == ProtectionPhase.ON && !appBlockingEnabled &&
+        state.rows.any { it.rule.serviceId != null && it.rule.enabled }) {
+        title = "Website protection is on"
+        status = "App blocking needs setup"
+        detail = "Enable App blocking access to protect the installed apps too."
+    } else when (state.dashboardStatus) {
         DashboardStatus.NO_SCHEDULES -> {
             title = "Protection is on"
             status = "Ready for your first schedule"

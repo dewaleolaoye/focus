@@ -11,6 +11,28 @@ import com.websiteblocker.app.BuildConfig
 import com.websiteblocker.app.vpn.*
 
 @Composable
+fun AppBlockingExplanation(onDismiss: () -> Unit, onEnable: () -> Unit, onAppInfo: () -> Unit, onPrivacy: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Enable app blocking") },
+        text = {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text("Focus uses Android Accessibility to detect the app on screen and return you to Home when its schedule is active. It does not read screen content, messages or passwords. Observed foreground app names stay in memory and are not recorded or shared.")
+                Text("In Android Accessibility settings, open Downloaded apps (or Installed apps), choose App blocking, and turn it on. Website blocking stays active through the VPN.")
+                Text("For a sideloaded APK, Android may show Restricted setting. If you trust this build, open Focus app info, tap the three-dot menu and Allow restricted settings, then return to Accessibility. The option and wording depend on your device.")
+                TextButton(onClick = onAppInfo) { Text("Open Focus app info") }
+                TextButton(onClick = onPrivacy) { Text("Privacy policy") }
+            }
+        },
+        confirmButton = { TextButton(onClick = onEnable) { Text("Agree and open settings") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Not now") } },
+    )
+}
+
+@Composable
 fun ProtectionCard(
     state: ProtectionState,
     appBlockingEnabled: Boolean,
@@ -39,7 +61,7 @@ fun ProtectionCard(
                 if (appBlockingAvailable)
                     "Website and app controls are separate Android permissions. Enable both for the strongest blocking."
                 else
-                    "Active popular-service schedules block all network traffic from their installed apps through the private on-device VPN.",
+                    "Website schedules block matching DNS requests through the on-device VPN.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             ProtectionStatusRow("Websites", state.message, state.phase == ProtectionPhase.ON)
@@ -93,7 +115,7 @@ private fun ProtectionStatusRow(title: String, status: String, ready: Boolean) {
 }
 
 @Composable
-fun PermissionExplanation(onDismiss: () -> Unit, onEnable: () -> Unit) {
+fun PermissionExplanation(onDismiss: () -> Unit, onEnable: () -> Unit, onPrivacy: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Private, on-device protection") },
@@ -102,17 +124,10 @@ fun PermissionExplanation(onDismiss: () -> Unit, onEnable: () -> Unit) {
                 Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(
-                    "Focus uses an on-device VPN to block selected apps and websites during your chosen schedule. Your browsing activity is not collected or sent to a server."
-                )
-                if (BuildConfig.ACCESSIBILITY_APP_BLOCKING)
-                    Text(
-                        "Popular-app blocking uses Android Accessibility only to see the name of the app currently on screen. During an active schedule it returns you to Home. It does not read or store screen content."
-                    )
-                else
-                    Text(
-                        "Popular-service schedules use package-scoped VPN routing to stop all IPv4 and IPv6 traffic from their installed apps. While an installed-app schedule is active, app blocking takes priority over custom website filtering."
-                    )
+                Text("Focus uses Android's VPN permission to inspect DNS domain names on this device and block names matching your schedules. This runs in the background while protection is on. Blocked queries stay on the device; Focus does not keep a DNS or browsing history.")
+                Text("Allowed DNS queries are sent to Cloudflare's 1.1.1.1 public resolver using encrypted HTTPS. Cloudflare receives the queried domain name, DNS request and your IP address to resolve it. The developer does not receive these queries. This is website filtering, not a VPN that hides your IP address or encrypts all browsing traffic.")
+                Text("You can decline, or stop protection at any time from Settings or the notification. App blocking asks for separate Accessibility consent. Advertising never receives data from this VPN or the Accessibility service.")
+                TextButton(onClick = onPrivacy) { Text("Privacy policy and providers") }
                 Text(
                     "Only one VPN can be active. Enabling this replaces another VPN unless Android prevents it."
                 )
@@ -121,7 +136,7 @@ fun PermissionExplanation(onDismiss: () -> Unit, onEnable: () -> Unit) {
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onEnable) { Text("Continue") } },
+        confirmButton = { TextButton(onClick = onEnable) { Text("Agree and continue") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } },
     )
 }

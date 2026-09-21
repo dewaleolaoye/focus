@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Circular black badge background matching Flaticon 5969020 / X style -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M24,0C10.745,0 0,10.745 0,24s10.745,24 24,24 24,-10.745 24,-24S37.255,0 24,0z"/>
+
+    <!-- Crisp White X Logo centered in 48x48 viewport -->
+    <group
+        android:translateX="12"
+        android:translateY="12"
+        android:scaleX="1.0"
+        android:scaleY="1.0">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M18.244,2.25h3.308l-7.227,8.26 8.502,11.24H16.17l-5.214,-6.817L4.99,21.75H1.68l7.73,-8.835L1.254,2.25H8.08l4.713,6.231zm-1.161,17.52h1.833L7.084,4.126H5.117z"/>
+    </group>
+</vector>

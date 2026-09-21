@@ -21,6 +21,8 @@ import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.LoadAdError
 import com.websiteblocker.app.BuildConfig
+import com.websiteblocker.app.BlockerApplication
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun AnchoredAdaptiveBanner(
@@ -28,6 +30,8 @@ fun AnchoredAdaptiveBanner(
     adUnitId: String = BuildConfig.ADMOB_BANNER_AD_UNIT_ID,
 ) {
     val context = LocalContext.current
+    val privacy by (context.applicationContext as BlockerApplication).adsConsent.state.collectAsStateWithLifecycle()
+    if (!privacy.canShowAds) return
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
 

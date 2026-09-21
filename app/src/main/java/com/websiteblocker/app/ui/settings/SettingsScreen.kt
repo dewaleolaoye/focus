@@ -48,6 +48,13 @@ fun SettingsScreen(
     enable: () -> Unit,
     stop: () -> Unit,
     enableAppBlocking: () -> Unit,
+    privacy: () -> Unit,
+    adsPrivacy: com.websiteblocker.app.privacy.AdsPrivacyState,
+    ageGroup: com.websiteblocker.app.privacy.AgeGroup?,
+    changeAgeGroup: () -> Unit,
+    manageAdsPrivacy: () -> Unit,
+    revokeAppBlocking: () -> Unit,
+    revokeVpn: () -> Unit,
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -92,7 +99,7 @@ fun SettingsScreen(
                         }
                         Text(
                             when (protection.phase) {
-                                ProtectionPhase.ON -> "Protection is on"
+                                ProtectionPhase.ON -> if (appBlockingEnabled) "Protection is on" else "Website protection is on"
                                 ProtectionPhase.OFF -> "Protection is off"
                                 ProtectionPhase.STARTING -> "Starting protection"
                                 ProtectionPhase.NEEDS_REACTIVATION -> "Protection needs attention"
@@ -121,11 +128,28 @@ fun SettingsScreen(
                 }
             }
             item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = privacy, modifier = Modifier.fillMaxWidth()) { Text("Privacy policy") }
+                    OutlinedButton(onClick = changeAgeGroup, modifier = Modifier.fillMaxWidth()) {
+                        Text("Age group: ${ageGroup?.label ?: "Not specified"}")
+                    }
+                    OutlinedButton(onClick = manageAdsPrivacy, enabled = !adsPrivacy.busy, modifier = Modifier.fillMaxWidth()) {
+                        Text(if (adsPrivacy.busy) "Checking privacy choices…" else "Advertising privacy choices")
+                    }
+                    adsPrivacy.message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    if (!adsPrivacy.privacyOptionsRequired && !adsPrivacy.busy && adsPrivacy.message == null)
+                        Text("Google has not requested a privacy form for this device. You can check again here.", style = MaterialTheme.typography.bodySmall)
+                    OutlinedButton(onClick = revokeVpn, modifier = Modifier.fillMaxWidth()) {
+                        Text("Withdraw website protection consent")
+                    }
+                }
+            }
+            item {
                 InfoCard(
                     icon = { Icon(Icons.Rounded.Info, contentDescription = null) },
                     title = "How blocking works",
                     body =
-                        "Popular app schedules block network access for the installed app. Website schedules use the private on-device VPN to stop matching domains. Schedules switch automatically at your chosen times.",
+                        "Popular app schedules return you to Home when a selected app opens. Enable App blocking in Android Accessibility settings. The on-device VPN blocks matching website domains at the same time.",
                 )
             }
             item {
@@ -133,7 +157,7 @@ fun SettingsScreen(
                     icon = { Icon(Icons.Rounded.PrivacyTip, contentDescription = null) },
                     title = "Private by design",
                     body =
-                        "Focus does not collect browsing history or send your schedules to a server. Your rules stay on this device. Dashboard ads are served by Google AdMob.",
+                        "Rules stay on your device. Allowed DNS requests go to Cloudflare over HTTPS; blocked requests stay local. Google AdMob serves ads after privacy checks. Read the privacy policy for data use, retention and your choices.",
                 )
             }
             item {
@@ -160,9 +184,14 @@ fun SettingsScreen(
                             Text("On-screen app blocking", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                             Text(
                                 if (appBlockingEnabled) "Accessibility app blocking is enabled."
-                                else "Enable Accessibility for an extra layer that closes selected apps during quiet hours.",
+                                else "App blocking is not connected. Enable App blocking in Android Accessibility settings to prevent selected apps from staying open during quiet hours.",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                            if (appBlockingEnabled) {
+                                OutlinedButton(onClick = revokeAppBlocking, modifier = Modifier.fillMaxWidth()) {
+                                    Text("Withdraw app blocking consent")
+                                }
+                            }
                             if (!appBlockingEnabled) {
                                 Button(onClick = enableAppBlocking, modifier = Modifier.fillMaxWidth()) {
                                     Text("Enable app blocking")

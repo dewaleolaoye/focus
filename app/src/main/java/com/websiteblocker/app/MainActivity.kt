@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
             WebsiteBlockerTheme {
                 val nav = rememberNavController()
                 val lifecycleOwner = LocalLifecycleOwner.current
-                var appBlockingEnabled by remember {
+                var appBlockingPermission by remember {
                     mutableStateOf(
                         BuildConfig.ACCESSIBILITY_APP_BLOCKING &&
                             AppBlockingAccess.isEnabled(this)
@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
                 DisposableEffect(lifecycleOwner) {
                     val observer = LifecycleEventObserver { _, event ->
                         if (event == Lifecycle.Event.ON_RESUME) {
-                            appBlockingEnabled =
+                            appBlockingPermission =
                                 BuildConfig.ACCESSIBILITY_APP_BLOCKING &&
                                     AppBlockingAccess.isEnabled(this@MainActivity)
                             app.protection.recoverIfPossible()
@@ -58,6 +58,14 @@ class MainActivity : ComponentActivity() {
                     lifecycleOwner.lifecycle.addObserver(observer)
                     onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
                 }
+                val appBlockingConnected by AppBlockingAccess.connection.collectAsStateWithLifecycle()
+                val disclosure by app.disclosures.state.collectAsStateWithLifecycle()
+                val adsPrivacy by app.adsConsent.state.collectAsStateWithLifecycle()
+                val ageGroup by app.audience.state.collectAsStateWithLifecycle()
+                var choosingAge by rememberSaveable { mutableStateOf(app.audience.state.value == null) }
+                LaunchedEffect(ageGroup) { app.adsConsent.request(this@MainActivity) }
+                val appBlockingEnabled = appBlockingPermission && appBlockingConnected && disclosure.accessibilityAccepted
+                var appBlockingExplanation by rememberSaveable { mutableStateOf(false) }
                 val home: HomeViewModel =
                     viewModel(
                         factory =
@@ -92,6 +100,9 @@ class MainActivity : ComponentActivity() {
                             enable = { explanation = true },
                             settings = { nav.navigate("settings") },
                             dismissError = home::dismissError,
+                            appBlockingEnabled = appBlockingEnabled,
+                            enableAppBlocking = { appBlockingExplanation = true },
+                            privacy = { nav.navigate("privacy") },
                         )
                     }
                     composable("settings") {
@@ -106,11 +117,24 @@ class MainActivity : ComponentActivity() {
                                 app.protection.stop()
                                 nav.popBackStack()
                             },
-                            enableAppBlocking = {
-                                if (BuildConfig.ACCESSIBILITY_APP_BLOCKING)
-                                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                            enableAppBlocking = { appBlockingExplanation = true },
+                            privacy = { nav.navigate("privacy") },
+                            adsPrivacy = adsPrivacy,
+                            ageGroup = ageGroup,
+                            changeAgeGroup = {
+                                app.adsConsent.pauseForAudienceChoice()
+                                choosingAge = true
+                            },
+                            manageAdsPrivacy = { app.adsConsent.showPrivacyOptions(this@MainActivity) },
+                            revokeAppBlocking = { app.disclosures.revokeAccessibility() },
+                            revokeVpn = {
+                                app.protection.stop()
+                                app.disclosures.revokeVpn()
                             },
                         )
+                    }
+                    composable("privacy") {
+                        com.websiteblocker.app.privacy.PrivacyPolicyScreen(back = { nav.popBackStack() })
                     }
                     composable(
                         "rule/{id}",
@@ -141,11 +165,46 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
+                if (choosingAge)
+                    com.websiteblocker.app.privacy.AgeGroupDialog(
+                        select = {
+                            app.adsConsent.pauseForAudienceChoice()
+                            val unchanged = app.audience.state.value == it
+                            app.audience.setAgeGroup(it)
+                            choosingAge = false
+                            // Re-selecting the same group also restarts a paused consent check.
+                            if (unchanged) app.adsConsent.request(this@MainActivity)
+                        },
+                        privacy = {
+                            app.audience.setAgeGroup(com.websiteblocker.app.privacy.AgeGroup.UNSPECIFIED)
+                            choosingAge = false
+                            nav.navigate("privacy")
+                        },
+                    )
+                if (appBlockingExplanation)
+                    com.websiteblocker.app.ui.permission.AppBlockingExplanation(
+                        onDismiss = { appBlockingExplanation = false },
+                        onEnable = {
+                            appBlockingExplanation = false
+                            app.disclosures.acceptAccessibility()
+                            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                        },
+                        onPrivacy = {
+                            appBlockingExplanation = false
+                            nav.navigate("privacy")
+                        },
+                        onAppInfo = {
+                            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                android.net.Uri.parse("package:$packageName")))
+                        },
+                    )
                 if (explanation)
                     PermissionExplanation(
                         onDismiss = { explanation = false },
+                        onPrivacy = { explanation = false; nav.navigate("privacy") },
                         onEnable = {
                             explanation = false
+                            app.disclosures.acceptVpn()
                             try {
                                 val intent = VpnService.prepare(this)
                                 if (intent == null) start() else consent.launch(intent)

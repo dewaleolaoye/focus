@@ -61,6 +61,10 @@ class ProtectionController(private val context: Context) {
     }
 
     fun start() {
+        if (!(context.applicationContext as com.websiteblocker.app.BlockerApplication).disclosures.state.value.vpnAccepted) {
+            failed("Review and accept website protection's DNS disclosure to enable blocking.")
+            return
+        }
         if (state.value.phase in listOf(ProtectionPhase.ON, ProtectionPhase.STARTING)) return
         val consentRequired =
             try {
@@ -86,8 +90,7 @@ class ProtectionController(private val context: Context) {
     }
 
     fun stop() {
-        preferences.edit { putBoolean("enabled", false) }
-        mutableState.value = ProtectionState()
+        recordUserStop()
         val stopIntent =
             Intent(context, WebsiteBlockVpnService::class.java)
                 .setAction(WebsiteBlockVpnService.STOP)
@@ -98,6 +101,12 @@ class ProtectionController(private val context: Context) {
         } catch (_: RuntimeException) {
             context.stopService(Intent(context, WebsiteBlockVpnService::class.java))
         }
+    }
+
+    /** Also called by the notification action, which delivers STOP directly to the service. */
+    internal fun recordUserStop() {
+        preferences.edit { putBoolean("enabled", false) }
+        mutableState.value = ProtectionState()
     }
 
     fun active() {

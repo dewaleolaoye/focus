@@ -34,6 +34,8 @@ fun ServiceIcon(profile: ServiceProfile, size: Dp = 44.dp) {
             "instagram" -> R.drawable.brand_instagram
             "youtube" -> R.drawable.brand_youtube
             "whatsapp" -> R.drawable.brand_whatsapp
+            "tiktok" -> R.drawable.brand_tiktok
+            "x" -> R.drawable.brand_x
             else -> null
         }
     // Prefer controlled transparent artwork for brands whose adaptive launcher icons can be
@@ -71,6 +73,7 @@ fun ServiceIcon(profile: ServiceProfile, size: Dp = 44.dp) {
             "whatsapp" -> Color(0xFF128C4A)
             "facebook" -> Color(0xFF1877F2)
             "x" -> if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) Color(0xFFF2F2F2) else Color.Black
+            "tiktok" -> Color(0xFF010101)
             else -> MaterialTheme.colorScheme.primary
         }
     val foreground = if (background.luminance() > 0.7f) Color.Black else Color.White

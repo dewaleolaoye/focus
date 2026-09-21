@@ -1,0 +1,6 @@
+# Public identity. Copy to release.properties and fill with your actual publisher details.
+developerName=
+contactEmail=
+privacyPolicyUrl=
+# Signing is read ONLY from environment variables; never put passwords in this file.
+# FOCUS_KEYSTORE_PATH, FOCUS_KEYSTORE_PASSWORD, FOCUS_KEY_ALIAS, FOCUS_KEY_PASSWORD

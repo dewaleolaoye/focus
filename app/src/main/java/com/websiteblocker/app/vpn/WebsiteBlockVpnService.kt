@@ -12,12 +12,8 @@ import com.websiteblocker.app.BlockerApplication
 import com.websiteblocker.app.data.model.BlockRule
 import com.websiteblocker.app.domain.ScheduleEvaluator
 import com.websiteblocker.app.domain.ServiceCatalog
-import com.websiteblocker.app.domain.AppBlockingPolicy
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.net.DatagramPacket
-import java.net.DatagramSocket
-import java.net.InetAddress
 import java.time.ZonedDateTime
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -36,11 +32,17 @@ class WebsiteBlockVpnService : VpnService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == STOP) {
+            app.protection.recordUserStop()
             job?.cancel()
             job = null
             runCatching { tunnel?.close() }
             tunnel = null
             stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        if (!app.disclosures.state.value.vpnAccepted) {
+            app.protection.failed("Review and accept website protection's DNS disclosure in Focus.")
             stopSelf()
             return START_NOT_STICKY
         }
@@ -100,23 +102,13 @@ class WebsiteBlockVpnService : VpnService() {
             }
         }
         while (isActive) {
-            val requestedPackages = AppBlockingPolicy.activePackages(rules, ZonedDateTime.now())
-            val installedPackages = requestedPackages.filterTo(linkedSetOf(), ::isInstalled)
-            val descriptor = establishTunnel(installedPackages)
+            val descriptor = establishTunnel()
             tunnel = descriptor
             app.protection.active()
-            val worker =
-                launch {
-                    if (installedPackages.isEmpty()) processPackets(descriptor)
-                    else discardPackets(descriptor)
-                }
+            val worker = launch { processPackets(descriptor) }
             try {
                 while (isActive) {
                     withTimeoutOrNull(1_000) { changed.receive() }
-                    val next =
-                        AppBlockingPolicy.activePackages(rules, ZonedDateTime.now())
-                            .filterTo(linkedSetOf(), ::isInstalled)
-                    if (next != installedPackages) break
                 }
             } finally {
                 worker.cancel()
@@ -127,43 +119,15 @@ class WebsiteBlockVpnService : VpnService() {
         }
     }
 
-    private fun isInstalled(packageName: String): Boolean =
-        try {
-            packageManager.getPackageInfo(packageName, 0)
-            true
-        } catch (_: Exception) {
-            false
-        }
-
-    private fun establishTunnel(blockedPackages: Set<String>): ParcelFileDescriptor {
+    private fun establishTunnel(): ParcelFileDescriptor {
         val builder = Builder().setSession("Focus").setMtu(8192).setBlocking(true)
-        if (blockedPackages.isEmpty()) {
-            builder
-                .addAddress("10.111.0.1", 32)
-                .addDnsServer("10.111.0.2")
-                .addRoute("10.111.0.2", 32)
-                .allowFamily(OsConstants.AF_INET6)
-        } else {
-            builder
-                .addAddress("10.111.0.1", 32)
-                .addAddress("fd6f:7a65:626c::1", 128)
-                .addRoute("0.0.0.0", 0)
-                .addRoute("::", 0)
-            blockedPackages.forEach(builder::addAllowedApplication)
-        }
+        builder
+            .addAddress("10.111.0.1", 32)
+            .addDnsServer("10.111.0.2")
+            .addRoute("10.111.0.2", 32)
+            .allowFamily(OsConstants.AF_INET6)
         return builder.establish() ?: error("VPN permission revoked")
     }
-
-    /** Package-scoped full tunnel: reading and discarding blocks every protocol and endpoint. */
-    private suspend fun discardPackets(descriptor: ParcelFileDescriptor) =
-        withContext(Dispatchers.IO) {
-            val input = FileInputStream(descriptor.fileDescriptor)
-            val buffer = ByteArray(8192)
-            while (isActive) {
-                val count = input.read(buffer)
-                if (count <= 0) error("Tunnel closed")
-            }
-        }
 
     private suspend fun processPackets(descriptor: ParcelFileDescriptor) = coroutineScope {
         val queue = Channel<DnsPacketHandler.Query>(32)
@@ -262,36 +226,12 @@ class WebsiteBlockVpnService : VpnService() {
                             1
                         else 0)
                 }
-        // A validated background cellular network may still reject this UID's sockets.
-        // Prefer the usable foreground network, then try another reported network on failure.
+        // Connections are explicitly bound to a non-VPN network; the tunnel captures only its
+        // local DNS address. DNS payloads go to Cloudflare over verified HTTPS, never UDP/53.
         for (network in networks.take(2)) {
-            val configured =
-                manager.getLinkProperties(network)?.dnsServers.orEmpty().filter {
-                    !it.isAnyLocalAddress &&
-                        !it.isLoopbackAddress &&
-                        !it.isMulticastAddress &&
-                        it.hostAddress != "10.111.0.2"
-                }
-            val servers = configured.ifEmpty {
-                listOf(InetAddress.getByAddress(byteArrayOf(1, 1, 1, 1)))
-            }
-            for (server in servers.take(2)) {
-                try {
-                    DatagramSocket().use { socket ->
-                        if (!protect(socket)) return null
-                        network.bindSocket(socket)
-                        socket.connect(server, 53)
-                        socket.soTimeout = 2000
-                        socket.send(DatagramPacket(query.dns, query.dns.size))
-                        val response = DatagramPacket(ByteArray(4096), 4096)
-                        socket.receive(response)
-                        val bytes = response.data.copyOf(response.length)
-                        if (DnsPacketHandler.validResponse(query, bytes)) return bytes
-                    }
-                } catch (_: Exception) {
-                    /* No traffic logging. Try the next reported resolver/network. */
-                }
-            }
+            val answer = DnsOverHttps { url -> network.openConnection(url, java.net.Proxy.NO_PROXY) }
+                .resolve(query)
+            if (answer != null) return answer
         }
         return null
     }

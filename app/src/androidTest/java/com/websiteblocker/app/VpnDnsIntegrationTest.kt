@@ -28,6 +28,7 @@ class VpnDnsIntegrationTest {
         )
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val app = instrumentation.targetContext.applicationContext as BlockerApplication
+        val originalDisclosure = app.disclosures.state.value
         val dao = app.database.rules()
         check(dao.observeRules().first().isEmpty()) {
             "Use a fresh test emulator; this test must not change user rules."
@@ -52,6 +53,7 @@ class VpnDnsIntegrationTest {
             )
         val id = dao.insert(rule)
         try {
+            if (!originalDisclosure.vpnAccepted) app.disclosures.acceptVpn()
             instrumentation.runOnMainSync { app.protection.start() }
             withTimeout(15000) { app.protection.state.first { it.phase == ProtectionPhase.ON } }
             val connectivity = app.getSystemService(android.net.ConnectivityManager::class.java)
@@ -84,6 +86,7 @@ class VpnDnsIntegrationTest {
                 app.protection.stop()
                 activity.finish()
             }
+            if (!originalDisclosure.vpnAccepted) app.disclosures.revokeVpn()
         }
     }
 

@@ -4,6 +4,18 @@ import com.websiteblocker.app.data.model.BlockRule
 import java.time.ZonedDateTime
 
 object AppBlockingPolicy {
+    fun blockingRule(
+        packageName: String?,
+        rules: List<BlockRule>,
+        now: ZonedDateTime,
+        protectionEnabled: Boolean,
+    ): BlockRule? {
+        if (!protectionEnabled || packageName == null) return null
+        return rules.firstOrNull {
+            ServiceCatalog.matchesPackage(packageName, it) && ScheduleEvaluator.isActive(it, now)
+        }
+    }
+
     fun activePackages(rules: List<BlockRule>, now: ZonedDateTime): Set<String> =
         rules
             .asSequence()
