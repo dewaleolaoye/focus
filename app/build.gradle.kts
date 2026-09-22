@@ -20,10 +20,10 @@ val uploadKeyPassword = providers.environmentVariable("FOCUS_KEY_PASSWORD").orNu
 val signingReady = listOf(uploadKeyPath, uploadStorePassword, uploadAlias, uploadKeyPassword).all { !it.isNullOrBlank() }
 
 android {
-    namespace = "com.websiteblocker.app"
+    namespace = "com.usefocus.app"
     compileSdk { version = release(37) { minorApiLevel = 2 } }
     defaultConfig {
-        applicationId = "com.websiteblocker.app"
+        applicationId = "com.usefocus.app"
         minSdk = 26
         targetSdk = 37
         versionCode = 4

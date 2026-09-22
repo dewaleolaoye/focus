@@ -34,7 +34,7 @@ Play/internal-testing APK: `app/build/outputs/apk/play/debug/app-play-debug.apk`
    ```sh
    "$HOME/Library/Android/sdk/platform-tools/adb" devices -l
    "$HOME/Library/Android/sdk/platform-tools/adb" -s PHONE_SERIAL install -r app/build/outputs/apk/sideload/debug/app-sideload-debug.apk
-   "$HOME/Library/Android/sdk/platform-tools/adb" -s PHONE_SERIAL shell am start -n com.websiteblocker.app/.MainActivity
+   "$HOME/Library/Android/sdk/platform-tools/adb" -s PHONE_SERIAL shell am start -n com.usefocus.app/.MainActivity
    ```
 
 3. Tap **Enable Blocking**, read the privacy explanation, then **Agree and continue**, and accept Android's VPN connection request. Allow notifications for a visible persistent status notification.
@@ -106,7 +106,7 @@ It grants VPN consent via the instrumentation shell on that emulator, launches t
 The opt-in native integration test temporarily disables existing rules and restores them afterward. It exercises the real installed YouTube app (already open, repeated launch, rule disable/re-enable/delete, master stop/start), all six services' DNS domains and a custom website simultaneously. Run only on a test emulator with YouTube installed:
 
 ```sh
-./gradlew :app:connectedSideloadDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.appBlockingIntegration=true -Pandroid.testInstrumentationRunnerArguments.class=com.websiteblocker.app.AppBlockingIntegrationTest
+./gradlew :app:connectedSideloadDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.appBlockingIntegration=true -Pandroid.testInstrumentationRunnerArguments.class=com.usefocus.app.AppBlockingIntegrationTest
 ```
 
 See [verification results](docs/VERIFICATION.md) and [manual testing](docs/MANUAL_TEST_PLAN.md).
