@@ -34,22 +34,4 @@ class DisclosureConsentTest {
             assertFalse(DisclosureConsentStore(context).state.value.vpnAccepted)
         } finally { preferences.edit().clear().commit() }
     }
-    @Test fun ageChoiceDefaultsToUnknownAndPersistsOnlyTheChosenGroup() {
-        val base = InstrumentationRegistry.getInstrumentation().targetContext
-        val context = object : ContextWrapper(base) {
-            override fun getSharedPreferences(name: String, mode: Int) =
-                base.getSharedPreferences("test-audience", Context.MODE_PRIVATE)
-        }
-        val preferences = context.getSharedPreferences("", 0)
-        preferences.edit().clear().commit()
-        try {
-            val store = com.usefocus.app.privacy.AudienceStore(context)
-            assertNull(store.state.value)
-            for (group in com.usefocus.app.privacy.AgeGroup.entries) {
-                store.setAgeGroup(group)
-                assertEquals(group, com.usefocus.app.privacy.AudienceStore(context).state.value)
-                assertEquals(setOf("age_group"), preferences.all.keys)
-            }
-        } finally { preferences.edit().clear().commit() }
-    }
 }

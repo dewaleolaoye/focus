@@ -73,7 +73,6 @@ Do not mark physical-device acceptance complete until all four browser/network c
 ## Privacy and audience regression (1.3.0)
 
 - Fresh install and upgrade: decline the separate VPN and Accessibility disclosures; confirm neither permission is treated as in-app consent. Accept separately and confirm both controls work. Withdraw app-blocking consent: native app opens, website DNS still blocks. Withdraw website consent: master protection and both controls stop.
-- Choose each age group, relaunch, and verify persistence. Under 13, 13–17 and Prefer not to say must never request a banner or advertising consent form. Repeat after previously choosing adult; the banner must disappear immediately.
-- For adult tests use Google's test ad IDs and configured UMP test geography/devices. Test consent allowed, declined, required privacy-options form, no-form-required, offline and retry. An unavailable consent service must keep ads off without preventing blocking.
+- For ad tests use Google's test ad IDs and configured UMP test geography/devices. Test consent allowed, declined, no-form-required, offline and retry. An unavailable consent service must keep ads off without preventing blocking.
 - Open the full privacy policy from first-run, each disclosure and Settings. Compare publisher identity/contact and public policy to the final release configuration.
 - Verify allowed DNS over HTTPS, resolver outage returning failure without plaintext fallback, Wi-Fi/cellular transitions, and private-network hostname limitations. Re-run all six apps and browser sites on a physical phone.

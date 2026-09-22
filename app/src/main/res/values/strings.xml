@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">Focus</string>
-    <string name="app_blocking_service_name">App blocking</string>
+    <string name="app_blocking_service_name">Focus</string>
     <string name="app_blocking_description">Prevents selected popular apps from opening during your scheduled quiet hours. It reads only the name of the app currently shown and does not read or store screen content.</string>
 </resources>

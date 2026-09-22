@@ -49,10 +49,6 @@ fun SettingsScreen(
     stop: () -> Unit,
     enableAppBlocking: () -> Unit,
     privacy: () -> Unit,
-    adsPrivacy: com.usefocus.app.privacy.AdsPrivacyState,
-    ageGroup: com.usefocus.app.privacy.AgeGroup?,
-    changeAgeGroup: () -> Unit,
-    manageAdsPrivacy: () -> Unit,
     revokeAppBlocking: () -> Unit,
     revokeVpn: () -> Unit,
 ) {
@@ -130,15 +126,6 @@ fun SettingsScreen(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = privacy, modifier = Modifier.fillMaxWidth()) { Text("Privacy policy") }
-                    OutlinedButton(onClick = changeAgeGroup, modifier = Modifier.fillMaxWidth()) {
-                        Text("Age group: ${ageGroup?.label ?: "Not specified"}")
-                    }
-                    OutlinedButton(onClick = manageAdsPrivacy, enabled = !adsPrivacy.busy, modifier = Modifier.fillMaxWidth()) {
-                        Text(if (adsPrivacy.busy) "Checking privacy choices…" else "Advertising privacy choices")
-                    }
-                    adsPrivacy.message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                    if (!adsPrivacy.privacyOptionsRequired && !adsPrivacy.busy && adsPrivacy.message == null)
-                        Text("Google has not requested a privacy form for this device. You can check again here.", style = MaterialTheme.typography.bodySmall)
                     OutlinedButton(onClick = revokeVpn, modifier = Modifier.fillMaxWidth()) {
                         Text("Withdraw website protection consent")
                     }

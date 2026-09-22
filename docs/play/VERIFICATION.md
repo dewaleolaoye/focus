@@ -4,7 +4,7 @@
 
 - Separate versioned, affirmative VPN and Accessibility disclosures, policy entry points and withdrawal controls. Android permission alone is insufficient. Native event handling discards foreground observations when disclosure consent is absent.
 - Full bundled policy with matching generated public HTML. The public HTML remains explicitly marked as a draft until the publisher supplies identity, public email and hosting URL.
-- Optional local age group for the owner-specified adult/teen audience. Under-18/unspecified users receive no ad requests or UMP consent-form requests. Adults require a successful current UMP check; SDK initialization and banner requests are gated. Debug banners use Google's test ID.
+- Audience declared for 13+ (adult/teen audience). AdMob and UMP consent-form requests proceed without local age-group gating. SDK initialization and banner requests are gated on consent. Debug banners use Google's test ID.
 - Allowed DNS forwarded using certificate-verified HTTPS to Cloudflare, with no UDP/plaintext fallback. Response validation rejects invalid, oversized or redirected replies. Website icons require HTTPS; application cleartext traffic is disabled.
 - Environment-based upload signing and a release preflight that fails on absent publisher metadata, signing prerequisites, mismatched hosted policy or an unsigned bundle. No key or identity was invented.
 

@@ -31,17 +31,7 @@ class AdsConsentManager(private val context: Context) {
     private var requestGeneration = 0
     private val gate = AdRequestGate()
 
-    private val adult get() = (context.applicationContext as com.usefocus.app.BlockerApplication)
-        .audience.state.value == AgeGroup.ADULT
-
-    fun pauseForAudienceChoice() {
-        ++requestGeneration
-        gate.beginConsentCheck()
-        mutableState.value = AdsPrivacyState(message = "Ads are off until adult age eligibility and privacy choices are confirmed.")
-    }
-
     fun request(activity: Activity) {
-        if (!adult) { pauseForAudienceChoice(); return }
         if (mutableState.value.busy) return
         val generation = ++requestGeneration
         gate.beginConsentCheck()
@@ -64,7 +54,6 @@ class AdsConsentManager(private val context: Context) {
     }
 
     fun showPrivacyOptions(activity: Activity) {
-        if (!adult) { pauseForAudienceChoice(); return }
         if (mutableState.value.busy) return
         if (consent.privacyOptionsRequirementStatus != ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED) {
             request(activity)
@@ -81,7 +70,7 @@ class AdsConsentManager(private val context: Context) {
     }
 
     private fun finish(allowed: Boolean, message: String?) {
-        gate.completeConsentCheck(allowed, isAdult = adult)
+        gate.completeConsentCheck(allowed)
         mutableState.value = AdsPrivacyState(
             canShowAds = gate.canRequestAds,
             privacyOptionsRequired = consent.privacyOptionsRequirementStatus ==
@@ -99,14 +88,14 @@ class AdsConsentManager(private val context: Context) {
                     initializing = false
                     // Consent may have changed while SDK initialization was in flight.
                     mutableState.value = mutableState.value.copy(
-                        canShowAds = gate.canRequestAds && adult && consent.canRequestAds(),
+                        canShowAds = gate.canRequestAds && consent.canRequestAds(),
                     )
                 }
                 }
             } catch (_: Exception) {
                 scope.launch {
                     initializing = false
-                    gate.completeConsentCheck(false, isAdult = adult)
+                    gate.completeConsentCheck(false)
                     mutableState.value = mutableState.value.copy(
                         canShowAds = false, busy = false,
                         message = "Ads are paused because initialization failed. You can retry privacy choices.",

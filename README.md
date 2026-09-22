@@ -63,11 +63,11 @@ The virtual DNS address is the only IPv4 route captured. Native foreground block
 
 Matching requests receive local NXDOMAIN and are never sent upstream. Allowed requests go to Cloudflare’s public resolver using authenticated DNS-over-HTTPS on an underlying non-VPN network. There is no plaintext fallback; unavailable or invalid HTTPS responses produce SERVFAIL. Focus is a local DNS firewall, not a full-traffic encrypted VPN.
 
-No browsing history, per-query storage, domain logs, account or application-owned backend. Rules, protection settings, versioned disclosure consent and an optional age group stay locally. Backups and device transfer are disabled. External favicon requests, allowed DNS resolution and advertising have different recipients, explained in the in-app privacy policy.
+No browsing history, per-query storage, domain logs, account or application-owned backend. Rules, protection settings and versioned disclosure consent stay locally. Backups and device transfer are disabled. External favicon requests, allowed DNS resolution and advertising have different recipients, explained in the in-app privacy policy.
 
 VPN and Accessibility have separate prominent disclosures and affirmative consent. Withdrawing VPN consent stops master protection; withdrawing Accessibility consent stops native enforcement. Existing installs must accept the new disclosures before enforcement resumes.
 
-Focus is intended for adults and teens aged 13+. Ads are disabled for under-18 and unspecified users. Adults pass Google UMP’s current privacy check before the ad SDK initializes or requests a banner; errors keep ads off. Settings includes age-group and advertising privacy controls. Debug builds use a Google test banner ID.
+Focus is intended for adults and teens aged 13+. Where required by local regulations, Google UMP’s privacy check passes before the ad SDK initializes or requests a banner; errors keep ads off. Debug builds use a Google test banner ID.
 
 ## Play submission preparation
 

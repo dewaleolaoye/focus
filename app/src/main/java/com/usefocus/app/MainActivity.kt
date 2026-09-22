@@ -60,10 +60,7 @@ class MainActivity : ComponentActivity() {
                 }
                 val appBlockingConnected by AppBlockingAccess.connection.collectAsStateWithLifecycle()
                 val disclosure by app.disclosures.state.collectAsStateWithLifecycle()
-                val adsPrivacy by app.adsConsent.state.collectAsStateWithLifecycle()
-                val ageGroup by app.audience.state.collectAsStateWithLifecycle()
-                var choosingAge by rememberSaveable { mutableStateOf(app.audience.state.value == null) }
-                LaunchedEffect(ageGroup) { app.adsConsent.request(this@MainActivity) }
+                LaunchedEffect(Unit) { app.adsConsent.request(this@MainActivity) }
                 val appBlockingEnabled = appBlockingPermission && appBlockingConnected && disclosure.accessibilityAccepted
                 var appBlockingExplanation by rememberSaveable { mutableStateOf(false) }
                 val home: HomeViewModel =
@@ -119,13 +116,6 @@ class MainActivity : ComponentActivity() {
                             },
                             enableAppBlocking = { appBlockingExplanation = true },
                             privacy = { nav.navigate("privacy") },
-                            adsPrivacy = adsPrivacy,
-                            ageGroup = ageGroup,
-                            changeAgeGroup = {
-                                app.adsConsent.pauseForAudienceChoice()
-                                choosingAge = true
-                            },
-                            manageAdsPrivacy = { app.adsConsent.showPrivacyOptions(this@MainActivity) },
                             revokeAppBlocking = { app.disclosures.revokeAccessibility() },
                             revokeVpn = {
                                 app.protection.stop()
@@ -165,22 +155,6 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
-                if (choosingAge)
-                    com.usefocus.app.privacy.AgeGroupDialog(
-                        select = {
-                            app.adsConsent.pauseForAudienceChoice()
-                            val unchanged = app.audience.state.value == it
-                            app.audience.setAgeGroup(it)
-                            choosingAge = false
-                            // Re-selecting the same group also restarts a paused consent check.
-                            if (unchanged) app.adsConsent.request(this@MainActivity)
-                        },
-                        privacy = {
-                            app.audience.setAgeGroup(com.usefocus.app.privacy.AgeGroup.UNSPECIFIED)
-                            choosingAge = false
-                            nav.navigate("privacy")
-                        },
-                    )
                 if (appBlockingExplanation)
                     com.usefocus.app.ui.permission.AppBlockingExplanation(
                         onDismiss = { appBlockingExplanation = false },

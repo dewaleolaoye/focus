@@ -8,7 +8,6 @@ import com.usefocus.app.data.website.WebsiteIconStore
 import com.usefocus.app.vpn.ProtectionController
 
 class BlockerApplication : Application() {
-    val audience by lazy { com.usefocus.app.privacy.AudienceStore(this) }
     val disclosures by lazy { com.usefocus.app.privacy.DisclosureConsentStore(this) }
     val adsConsent by lazy { com.usefocus.app.privacy.AdsConsentManager(this) }
 
