@@ -21,9 +21,34 @@ fun AppBlockingExplanation(onDismiss: () -> Unit, onEnable: () -> Unit, onAppInf
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text("Focus uses Android Accessibility to detect the app on screen and return you to Home when its schedule is active. It does not read screen content, messages or passwords. Observed foreground app names stay in memory and are not recorded or shared.")
-                Text("In Android Accessibility settings, open Downloaded apps (or Installed apps), choose App blocking, and turn it on. Website blocking stays active through the VPN.")
+                Text("In Android Accessibility settings, open Downloaded apps (or Installed apps), choose Focus, and turn it on. Website blocking stays active through the VPN.")
                 Text("For a sideloaded APK, Android may show Restricted setting. If you trust this build, open Focus app info, tap the three-dot menu and Allow restricted settings, then return to Accessibility. The option and wording depend on your device.")
                 TextButton(onClick = onAppInfo) { Text("Open Focus app info") }
+                TextButton(onClick = onPrivacy) { Text("Privacy policy") }
+            }
+        },
+        confirmButton = { TextButton(onClick = onEnable) { Text("Agree and open settings") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Not now") } },
+    )
+}
+
+@Composable
+fun NotificationSilencingExplanation(
+    onDismiss: () -> Unit,
+    onEnable: () -> Unit,
+    onPrivacy: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Silence notifications") },
+        text = {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text("Focus uses Android's Notification Access permission to dismiss incoming notifications from apps that are currently blocked by an active schedule.")
+                Text("Focus checks only the sender app package name to match against your active quiet hours. It never reads, logs, or shares message contents, sender names, or notification text.")
+                Text("In Android settings, locate Focus in Device & app notifications and allow access. You can turn this off or withdraw consent at any time in Focus Settings.")
                 TextButton(onClick = onPrivacy) { Text("Privacy policy") }
             }
         },

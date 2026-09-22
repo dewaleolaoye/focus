@@ -46,12 +46,17 @@ class MainActivity : ComponentActivity() {
                             AppBlockingAccess.isEnabled(this)
                     )
                 }
+                var notificationAccessPermission by remember {
+                    mutableStateOf(com.usefocus.app.notification.NotificationAccess.isEnabled(this))
+                }
                 DisposableEffect(lifecycleOwner) {
                     val observer = LifecycleEventObserver { _, event ->
                         if (event == Lifecycle.Event.ON_RESUME) {
                             appBlockingPermission =
                                 BuildConfig.ACCESSIBILITY_APP_BLOCKING &&
                                     AppBlockingAccess.isEnabled(this@MainActivity)
+                            notificationAccessPermission =
+                                com.usefocus.app.notification.NotificationAccess.isEnabled(this@MainActivity)
                             app.protection.recoverIfPossible()
                         }
                     }
@@ -63,6 +68,8 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(Unit) { app.adsConsent.request(this@MainActivity) }
                 val appBlockingEnabled = appBlockingPermission && appBlockingConnected && disclosure.accessibilityAccepted
                 var appBlockingExplanation by rememberSaveable { mutableStateOf(false) }
+                val notificationSilencingEnabled = notificationAccessPermission && disclosure.notificationAccepted
+                var notificationExplanation by rememberSaveable { mutableStateOf(false) }
                 val home: HomeViewModel =
                     viewModel(
                         factory =
@@ -121,6 +128,17 @@ class MainActivity : ComponentActivity() {
                                 app.protection.stop()
                                 app.disclosures.revokeVpn()
                             },
+                            notificationSilencingEnabled = notificationSilencingEnabled,
+                            enableNotificationSilencing = {
+                                if (notificationAccessPermission) {
+                                    app.disclosures.acceptNotification()
+                                } else {
+                                    notificationExplanation = true
+                                }
+                            },
+                            revokeNotificationSilencing = {
+                                app.disclosures.revokeNotification()
+                            },
                         )
                     }
                     composable("privacy") {
@@ -170,6 +188,19 @@ class MainActivity : ComponentActivity() {
                         onAppInfo = {
                             startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                                 android.net.Uri.parse("package:$packageName")))
+                        },
+                    )
+                if (notificationExplanation)
+                    com.usefocus.app.ui.permission.NotificationSilencingExplanation(
+                        onDismiss = { notificationExplanation = false },
+                        onEnable = {
+                            notificationExplanation = false
+                            app.disclosures.acceptNotification()
+                            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        },
+                        onPrivacy = {
+                            notificationExplanation = false
+                            nav.navigate("privacy")
                         },
                     )
                 if (explanation)

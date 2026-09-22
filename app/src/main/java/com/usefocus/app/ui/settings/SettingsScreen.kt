@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -51,6 +52,9 @@ fun SettingsScreen(
     privacy: () -> Unit,
     revokeAppBlocking: () -> Unit,
     revokeVpn: () -> Unit,
+    notificationSilencingEnabled: Boolean,
+    enableNotificationSilencing: () -> Unit,
+    revokeNotificationSilencing: () -> Unit,
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -184,6 +188,43 @@ fun SettingsScreen(
                                     Text("Enable app blocking")
                                 }
                             }
+                        }
+                    }
+                }
+            }
+            item {
+                ElevatedCard(
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    elevation = CardDefaults.elevatedCardElevation(0.dp),
+                    shape = RoundedCornerShape(24.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                Text("Silence notifications", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                Text(
+                                    if (notificationSilencingEnabled) "Muting notifications from blocked apps during quiet hours."
+                                    else "Dismiss notifications from blocked apps while quiet hours are active.",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                            Switch(
+                                checked = notificationSilencingEnabled,
+                                onCheckedChange = { checked ->
+                                    if (checked) enableNotificationSilencing()
+                                    else revokeNotificationSilencing()
+                                },
+                            )
                         }
                     }
                 }
