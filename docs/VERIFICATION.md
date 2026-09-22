@@ -1,5 +1,9 @@
 # Verification — September 18, 2026
 
+Latest privacy, audience and encrypted-resolver changes: [release preparation verification](play/VERIFICATION.md). Earlier results below describe the previous build.
+
+Historical report: distribution and app-enforcement details below are superseded by [the September 19 sideload fix and verification](SIDELOAD_BLOCKING_VERIFICATION.md).
+
 ## Implemented scope
 
 Focus now has two distribution variants and a redesigned native Compose experience:

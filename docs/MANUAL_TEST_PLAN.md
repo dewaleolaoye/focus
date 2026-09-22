@@ -8,8 +8,8 @@ Record phone model, Android version, app version, browser versions, current time
 - Turn Android **Settings → Network & internet / Connections → Private DNS → Off**. Menu paths vary by manufacturer.
 - Turn off **Use Secure DNS** in Chrome privacy/security settings, and any Secure DNS/encrypted resolver setting in Samsung Internet if present. Record the actual setting and browser version.
 - Start clean browser sessions, clear site/cache data if appropriate, and close existing tabs/connections. Clearing data can remove logins; use a test browser profile. DNS/connection caching can survive a simple reload. Do not clear personal data merely to force a result.
-- For the Play/internal-testing edition, enable **App blocking** under Android Accessibility settings. Confirm its system description states that it cannot retrieve screen content. Return to the app and verify the protection card reports app blocking access as on. The sideload edition must not offer or appear in Accessibility settings.
-- For the sideload edition, force-stop the selected popular app before each package-blocking test. Opening the app may still reveal cached/offline screens; verify that feeds, media, messages and refreshes cannot make a network connection on both Wi-Fi and mobile data.
+- In **sideload-debug** as well as Play builds, enable **App blocking** under Android Accessibility settings. If Android shows **Restricted setting**, use Focus app info → three-dot menu → **Allow restricted settings**, then enable the service. Confirm the service cannot retrieve screen content. Return to Focus and verify the setup warning disappears.
+- Native enforcement returns to Home; background messages/audio are not force-stopped. No Play Store upload is required.
 - Choose start = a few minutes before now, end = several minutes after now, all days. Verify protection is on and the schedule is active. Tests crossing midnight should select the correct start day.
 
 ## Browser/network matrix
@@ -40,7 +40,7 @@ For each cell:
 - Sunday overnight must carry into Monday. Every-day shortcut selects seven days.
 - Zero selected days, equal times and invalid hostnames must show inline errors without saving.
 - Paste `https://WWW.X.COM:443/home?source=test#part`: saved display must be `x.com`.
-- Add each popular service. The editor must show Instagram, WhatsApp, Facebook and X as selectable cards without displaying technical domains. The saved rule must show the service name and icon.
+- Add each popular service. The editor must show Instagram, WhatsApp, Facebook, X, TikTok and YouTube as selectable cards without displaying technical domains. The saved rule must show the service name and icon.
 - Edit a popular-service rule, switch it to **Custom website**, and verify an empty website field appears. Save a valid custom domain and confirm it displays as a website rule.
 - Select a different device time zone: the same local schedule should follow that zone on subsequent requests. Restore the original zone after testing.
 - Two overlapping rules: disabling one must leave the other effective.
@@ -55,12 +55,24 @@ For each cell:
 - Force stop the app: expect protection to stop and reopening to request reactivation. Do not report force-stop survival as supported.
 - Airplane mode then reconnect: no crash or retained dead resolver socket.
 - Rotate during editing, background/reopen editor, switch dark mode, use 200% font size and TalkBack. Check website labels, rule switches, all weekday chips, validation, time pickers and save/back controls are reachable.
-- In the Play/internal-testing edition, with active Instagram, WhatsApp, Facebook and X schedules, launch each installed app variant. Expect Android to return to Home immediately and show a short quiet-hours message. Test WhatsApp Business/Facebook Lite too when installed.
-- In the sideload edition, create an active rule for each installed popular app, force-stop it, then launch it. Expect the UI to open but all fresh network activity to fail. Confirm unrelated apps retain internet access. Disable the rule and allow up to one second for the VPN to reconfigure; fresh traffic must recover.
-- In the Play/internal-testing edition, disable App blocking in Accessibility settings and return to the app. The protection card must report access as off; website DNS blocking must continue independently. Re-enable it and repeat one app launch.
+- In **sideload-debug**, create active schedules for all six apps. Launch each from its icon, Recents, a deep link and a notification. Expect Home and a quiet-hours message. Repeat rapid launches; check Lite/Business/regional variants when installed. Repeat in Play debug if distributing that flavor.
+- Leave each app open before the schedule starts. Expect Home within about 500 ms of the boundary, without touching the screen. At the end, confirm the app can open normally. Test time-zone change and overnight schedules.
+- While all six schedules are active, verify all six websites and an active custom website rule are still blocked; unrelated websites/apps remain usable.
+- Disable, delete or move a rule outside its schedule; app access must return. Overlapping rules must continue blocking until the last active rule ends.
+- Turn off protection from Settings and separately from the VPN notification. Both native enforcement and website filtering must stop. Re-enable and test both again.
+- Disable App blocking in Accessibility settings and return to Focus. The dashboard must show **App blocking needs setup** for enabled popular-app rules; website DNS blocking continues. Re-enable and repeat a launch.
+- Test split-screen, picture-in-picture, screen lock/unlock, battery saver and manufacturer background restrictions on the actual phone. Record any exception rather than treating emulator coverage as device acceptance.
 - Confirm custom website rules do not block an unrelated installed app merely because its foreground package changed.
 - Enable Private DNS or browser Secure DNS deliberately: record bypass as a documented limitation. Restore original phone settings at the end.
 
 ## Release acceptance
 
 Do not mark physical-device acceptance complete until all four browser/network cells have evidence, restart/revocation states have been checked, and the exact tested APK/version is recorded. Emulator raw-DNS success alone does not establish cross-browser behavior on a phone.
+
+
+## Privacy and audience regression (1.3.0)
+
+- Fresh install and upgrade: decline the separate VPN and Accessibility disclosures; confirm neither permission is treated as in-app consent. Accept separately and confirm both controls work. Withdraw app-blocking consent: native app opens, website DNS still blocks. Withdraw website consent: master protection and both controls stop.
+- For ad tests use Google's test ad IDs and configured UMP test geography/devices. Test consent allowed, declined, no-form-required, offline and retry. An unavailable consent service must keep ads off without preventing blocking.
+- Open the full privacy policy from first-run, each disclosure and Settings. Compare publisher identity/contact and public policy to the final release configuration.
+- Verify allowed DNS over HTTPS, resolver outage returning failure without plaintext fallback, Wi-Fi/cellular transitions, and private-network hostname limitations. Re-run all six apps and browser sites on a physical phone.

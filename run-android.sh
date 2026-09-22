@@ -53,6 +53,6 @@ echo "Building and installing app (sideload debug)..."
 
 # 5. Launch the app on device
 echo "Launching app..."
-"$ADB" shell am start -n com.websiteblocker.app/.MainActivity
+"$ADB" shell am start -n com.usefocus.app/.MainActivity
 
 echo "Done! App is now running on your device/emulator."
