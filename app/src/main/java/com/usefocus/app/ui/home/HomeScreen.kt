@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.usefocus.app.R
 import com.usefocus.app.domain.ServiceCatalog
+import com.usefocus.app.ui.InstalledAppIcon
 import com.usefocus.app.ui.ServiceIcon
 import com.usefocus.app.ui.WebsiteIcon
 import com.usefocus.app.ui.formatDuration
@@ -220,7 +221,7 @@ private fun Dashboard(
                         settings = settings,
                     )
                 }
-                if (!appBlockingEnabled && state.rows.any { it.rule.serviceId != null && it.rule.enabled }) {
+                if (!appBlockingEnabled && state.rows.any { (it.rule.serviceId != null || it.rule.packageName != null) && it.rule.enabled }) {
                     item {
                         Surface(
                             shape = RoundedCornerShape(24.dp),
@@ -228,7 +229,7 @@ private fun Dashboard(
                         ) {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("App blocking needs setup", style = MaterialTheme.typography.titleMedium)
-                                Text("Website protection uses the VPN. To block Instagram, WhatsApp, Facebook, X, TikTok and YouTube apps, enable App blocking in Android Accessibility settings.")
+                                Text("Website protection uses the VPN. To block apps, enable App blocking in Android Accessibility settings.")
                                 Button(onClick = enableAppBlocking) { Text("Enable app blocking") }
                             }
                         }
@@ -493,8 +494,12 @@ private fun TargetScheduleRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            ServiceCatalog.find(row.rule.serviceId)?.let { ServiceIcon(it, 48.dp) }
-                ?: WebsiteIcon(row.rule.domain, 48.dp)
+            if (row.rule.packageName != null) {
+                InstalledAppIcon(row.rule.packageName, size = 48.dp)
+            } else {
+                ServiceCatalog.find(row.rule.serviceId)?.let { ServiceIcon(it, 48.dp) }
+                    ?: WebsiteIcon(row.rule.domain, 48.dp)
+            }
             Column(Modifier.weight(1f)) {
                 Text(
                     name,

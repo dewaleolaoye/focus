@@ -120,13 +120,15 @@ object ServiceCatalog {
     fun find(id: String?) = popular.firstOrNull { it.id == id }
 
     fun domainsFor(rule: BlockRule): Set<String> =
-        find(rule.serviceId)?.domains ?: setOf(rule.domain)
+        find(rule.serviceId)?.domains ?: if (rule.domain.isNotBlank()) setOf(rule.domain) else emptySet()
 
-    fun displayName(rule: BlockRule): String = find(rule.serviceId)?.name ?: rule.domain
+    fun displayName(rule: BlockRule): String =
+        rule.appDisplayName ?: find(rule.serviceId)?.name ?: rule.packageName ?: rule.domain
 
     fun matches(hostname: String, rule: BlockRule): Boolean =
         domainsFor(rule).any { DomainNormalizer.matches(hostname, it) }
 
     fun matchesPackage(packageName: String, rule: BlockRule): Boolean =
-        find(rule.serviceId)?.androidPackages?.contains(packageName) == true
+        (rule.packageName != null && rule.packageName == packageName) ||
+            find(rule.serviceId)?.androidPackages?.contains(packageName) == true
 }

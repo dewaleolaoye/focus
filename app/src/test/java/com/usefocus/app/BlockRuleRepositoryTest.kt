@@ -9,6 +9,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -58,6 +59,46 @@ class BlockRuleRepositoryTest {
         }
         assertThrows(IllegalArgumentException::class.java) {
             runBlocking { repository.save(rule(days = 0)) }
+        }
+    }
+
+    @Test
+    fun installedAppRulePersistsWithoutDomain() = runBlocking<Unit> {
+        val dao = FakeDao()
+        val repository = BlockRuleRepository(dao)
+
+        val appRule = BlockRule(
+            domain = "",
+            packageName = "com.slack",
+            appDisplayName = "Slack",
+            startMinute = 9 * 60,
+            endMinute = 17 * 60,
+            daysMask = 127,
+        )
+        repository.save(appRule)
+        val created = dao.snapshot().single()
+        assertEquals("com.slack", created.packageName)
+        assertEquals("Slack", created.appDisplayName)
+        assertEquals("", created.domain)
+        assertNull(created.serviceId)
+    }
+
+    @Test
+    fun emptyTargetIsRejected() {
+        val repository = BlockRuleRepository(FakeDao())
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking {
+                repository.save(
+                    BlockRule(
+                        domain = "",
+                        packageName = null,
+                        serviceId = null,
+                        startMinute = 60,
+                        endMinute = 120,
+                        daysMask = 127,
+                    )
+                )
+            }
         }
     }
 

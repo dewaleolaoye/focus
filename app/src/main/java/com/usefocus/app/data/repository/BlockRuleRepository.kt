@@ -21,10 +21,20 @@ class BlockRuleRepository(private val dao: BlockRuleDao) {
         require(rule.daysMask in 1..127) { "Select at least one day." }
         val profile = ServiceCatalog.find(rule.serviceId)
         require(rule.serviceId == null || profile != null) { "Choose a supported service." }
+        require(profile != null || !rule.packageName.isNullOrBlank() || rule.domain.isNotBlank()) {
+            "Specify an app or website to block."
+        }
+        val normalizedDomain = when {
+            profile != null -> DomainNormalizer.normalize(profile.primaryDomain)
+            !rule.packageName.isNullOrBlank() -> ""
+            else -> DomainNormalizer.normalize(rule.domain)
+        }
         val normalized =
             rule.copy(
-                domain = DomainNormalizer.normalize(profile?.primaryDomain ?: rule.domain),
+                domain = normalizedDomain,
                 serviceId = profile?.id,
+                packageName = rule.packageName?.trim()?.ifBlank { null },
+                appDisplayName = rule.appDisplayName?.trim()?.ifBlank { null },
             )
         if (rule.id == 0L) dao.insert(normalized)
         else

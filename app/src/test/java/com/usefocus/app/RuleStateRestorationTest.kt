@@ -56,4 +56,44 @@ class RuleStateRestorationTest {
         assertEquals(64, restored.days)
         assertEquals(600, restored.start)
     }
+
+    @Test
+    fun installedAppSelectionSurvivesRecreation() {
+        val restored = RuleState().restore(
+            SavedStateHandle(
+                mapOf(
+                    "serviceId" to null,
+                    "packageName" to "com.duolingo",
+                    "appDisplayName" to "Duolingo",
+                    "customSelected" to false,
+                    "domain" to "",
+                )
+            ),
+            existing,
+        )
+        assertNull(restored.serviceId)
+        assertEquals("com.duolingo", restored.packageName)
+        assertEquals("Duolingo", restored.appDisplayName)
+        assertFalse(restored.customSelected)
+        assertTrue(restored.canSave)
+    }
+
+    @Test
+    fun openingExistingInstalledAppRuleUsesStoredPackage() {
+        val installedRule = BlockRule(
+            id = 2,
+            domain = "",
+            packageName = "com.spotify.music",
+            appDisplayName = "Spotify",
+            startMinute = 600,
+            endMinute = 720,
+            daysMask = 127,
+        )
+        val restored = RuleState().restore(SavedStateHandle(), installedRule)
+        assertNull(restored.serviceId)
+        assertEquals("com.spotify.music", restored.packageName)
+        assertEquals("Spotify", restored.appDisplayName)
+        assertFalse(restored.customSelected)
+        assertTrue(restored.canSave)
+    }
 }

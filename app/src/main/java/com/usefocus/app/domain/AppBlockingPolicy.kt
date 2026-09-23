@@ -20,7 +20,9 @@ object AppBlockingPolicy {
         rules
             .asSequence()
             .filter { it.enabled && ScheduleEvaluator.isActive(it, now) }
-            .mapNotNull { ServiceCatalog.find(it.serviceId) }
-            .flatMap { it.androidPackages.asSequence() }
+            .flatMap { rule ->
+                if (rule.packageName != null) sequenceOf(rule.packageName)
+                else ServiceCatalog.find(rule.serviceId)?.androidPackages?.asSequence() ?: emptySequence()
+            }
             .toSet()
 }

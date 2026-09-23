@@ -6,7 +6,7 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.usefocus.app.data.model.BlockRule
 
-@Database(entities = [BlockRule::class], version = 2, exportSchema = true)
+@Database(entities = [BlockRule::class], version = 3, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun rules(): BlockRuleDao
 
@@ -15,6 +15,14 @@ abstract class AppDatabase : RoomDatabase() {
             object : Migration(1, 2) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL("ALTER TABLE block_rules ADD COLUMN serviceId TEXT")
+                }
+            }
+
+        val MIGRATION_2_3 =
+            object : Migration(2, 3) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE block_rules ADD COLUMN packageName TEXT")
+                    db.execSQL("ALTER TABLE block_rules ADD COLUMN appDisplayName TEXT")
                 }
             }
     }

@@ -12,4 +12,6 @@ data class BlockRule(
     val daysMask: Int,
     val enabled: Boolean = true,
     val serviceId: String? = null,
+    val packageName: String? = null,
+    val appDisplayName: String? = null,
 )

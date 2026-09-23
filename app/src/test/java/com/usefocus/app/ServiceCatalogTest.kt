@@ -62,4 +62,22 @@ class ServiceCatalogTest {
         assertTrue(ServiceCatalog.matchesPackage("com.google.android.youtube", youtube))
         assertFalse(ServiceCatalog.matchesPackage("com.google.android.apps.youtube.music", youtube))
     }
+
+    @Test
+    fun installedAppRuleMatchesPackageAndUsesAppDisplayName() {
+        val appRule = BlockRule(
+            domain = "",
+            packageName = "com.discord",
+            appDisplayName = "Discord",
+            startMinute = 0,
+            endMinute = 60,
+            daysMask = 127,
+        )
+        assertTrue(ServiceCatalog.matchesPackage("com.discord", appRule))
+        assertFalse(ServiceCatalog.matchesPackage("com.whatsapp", appRule))
+        assertEquals("Discord", ServiceCatalog.displayName(appRule))
+        // Installed app without domain should not match any DNS domain
+        assertFalse(ServiceCatalog.matches("discord.com", appRule))
+        assertTrue(ServiceCatalog.domainsFor(appRule).isEmpty())
+    }
 }

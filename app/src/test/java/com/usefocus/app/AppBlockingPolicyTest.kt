@@ -84,4 +84,25 @@ class AppBlockingPolicyTest {
         assertEquals(overlap, AppBlockingPolicy.blockingRule("com.whatsapp", listOf(overnight, overlap), tuesday.plusMinutes(30), true))
         assertNull(AppBlockingPolicy.blockingRule("com.whatsapp", emptyList(), tuesday, true))
     }
+
+    @Test
+    fun userSelectedInstalledAppsAreBlockedDuringSchedule() {
+        val appRule = BlockRule(
+            domain = "",
+            packageName = "com.reddit.frontpage",
+            appDisplayName = "Reddit",
+            startMinute = 720,
+            endMinute = 780,
+            daysMask = 1,
+            enabled = true,
+        )
+        assertNull(AppBlockingPolicy.blockingRule("com.reddit.frontpage", listOf(appRule), now.minusSeconds(1), true))
+        assertEquals(appRule, AppBlockingPolicy.blockingRule("com.reddit.frontpage", listOf(appRule), now, true))
+        assertNull(AppBlockingPolicy.blockingRule("com.reddit.frontpage", listOf(appRule), now.plusHours(1), true))
+        assertNull(AppBlockingPolicy.blockingRule("com.reddit.frontpage", listOf(appRule), now, false))
+        assertNull(AppBlockingPolicy.blockingRule("com.other.app", listOf(appRule), now, true))
+
+        val active = AppBlockingPolicy.activePackages(listOf(appRule), now)
+        assertEquals(setOf("com.reddit.frontpage"), active)
+    }
 }

@@ -13,10 +13,11 @@ class BlockerApplication : Application() {
 
     val database by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, "website-blocker.db")
-            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
     }
     val repository by lazy { BlockRuleRepository(database.rules()) }
     val websiteIcons by lazy { WebsiteIconStore(this) }
+    val installedApps by lazy { com.usefocus.app.data.repository.InstalledAppRepository(this) }
     val protection by lazy { ProtectionController(this) }
 }

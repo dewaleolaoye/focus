@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Language
@@ -64,9 +65,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.usefocus.app.domain.ServiceCatalog
 import com.usefocus.app.domain.ServiceProfile
+import com.usefocus.app.ui.InstalledAppIcon
 import com.usefocus.app.ui.ServiceIcon
 import com.usefocus.app.ui.formatDays
 import com.usefocus.app.ui.formatTime
@@ -88,6 +91,7 @@ fun RuleScreen(
     val locale = LocalConfiguration.current.locales[0]
     val is24 = DateFormat.is24HourFormat(context)
     var confirmDelete by remember { mutableStateOf(false) }
+    var showAppPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.completion) {
         when (state.completion) {
@@ -167,7 +171,13 @@ fun RuleScreen(
                                 )
                             }
                         }
-                        if (state.customSelected) {
+                        if (state.packageName != null) {
+                            SelectedAppHeader(
+                                packageName = state.packageName,
+                                appName = state.appDisplayName ?: state.packageName,
+                                change = { showAppPicker = true },
+                            )
+                        } else if (state.customSelected) {
                             SelectedWebsiteHeader(change = vm::clearTarget)
                             OutlinedTextField(
                                 value = state.domain,
@@ -200,6 +210,10 @@ fun RuleScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         } else {
+                            InstalledAppCard(
+                                enabled = !state.loading && !state.saving,
+                                onClick = { showAppPicker = true },
+                            )
                             CustomWebsiteCard(
                                 enabled = !state.loading && !state.saving,
                                 onClick = vm::customWebsite,
@@ -365,6 +379,15 @@ fun RuleScreen(
             },
         )
     }
+
+    if (showAppPicker) {
+        AppPickerBottomSheet(
+            onDismiss = { showAppPicker = false },
+            onAppSelected = { pkg, label ->
+                vm.installedApp(pkg, label)
+            },
+        )
+    }
 }
 
 @Composable
@@ -455,6 +478,70 @@ private fun CustomWebsiteCard(enabled: Boolean, onClick: () -> Unit) {
                 Text("Custom website", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text("Block a domain and its subdomains", style = MaterialTheme.typography.bodySmall)
             }
+        }
+    }
+}
+
+@Composable
+private fun InstalledAppCard(enabled: Boolean, onClick: () -> Unit) {
+    OutlinedCard(
+        onClick = onClick,
+        enabled = enabled,
+        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
+                Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Rounded.Apps, contentDescription = null)
+                }
+            }
+            Column {
+                Text("Choose installed app", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("Select any app installed on this device", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SelectedAppHeader(
+    packageName: String,
+    appName: String,
+    change: () -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            InstalledAppIcon(packageName = packageName, size = 36.dp)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    appName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    packageName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            TextButton(onClick = change) { Text("Change") }
         }
     }
 }

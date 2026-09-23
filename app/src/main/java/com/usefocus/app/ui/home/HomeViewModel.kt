@@ -141,7 +141,8 @@ object HomeStateFactory {
         )
     }
 
-    private fun targetKey(rule: BlockRule): String = rule.serviceId ?: rule.domain
+    private fun targetKey(rule: BlockRule): String =
+        rule.packageName ?: rule.serviceId ?: rule.domain
 }
 
 class HomeViewModel(

@@ -23,6 +23,8 @@ enum class RuleCompletion {
 data class RuleState(
     val domain: String = "",
     val serviceId: String? = null,
+    val packageName: String? = null,
+    val appDisplayName: String? = null,
     val customSelected: Boolean = false,
     val start: Int = 22 * 60,
     val end: Int = 7 * 60,
@@ -43,6 +45,7 @@ data class RuleState(
             !loading &&
                 !saving &&
                 (serviceId != null ||
+                    packageName != null ||
                     (customSelected && runCatching { DomainNormalizer.normalize(domain) }.isSuccess)) &&
                 start != end &&
                 days != 0
@@ -54,8 +57,11 @@ internal fun RuleState.restore(handle: SavedStateHandle, rule: BlockRule?): Rule
         domain = handle["domain"] ?: rule?.domain.orEmpty(),
         // A saved null means the user explicitly cleared the app target.
         serviceId = if (handle.contains("serviceId")) handle["serviceId"] else rule?.serviceId,
+        packageName = if (handle.contains("packageName")) handle["packageName"] else rule?.packageName,
+        appDisplayName =
+            if (handle.contains("appDisplayName")) handle["appDisplayName"] else rule?.appDisplayName,
         customSelected =
-            handle["customSelected"] ?: (rule != null && rule.serviceId == null),
+            handle["customSelected"] ?: (rule != null && rule.serviceId == null && rule.packageName == null),
         start = handle["start"] ?: rule?.startMinute ?: 1320,
         end = handle["end"] ?: rule?.endMinute ?: 420,
         days = handle["days"] ?: rule?.daysMask ?: 127,
@@ -113,12 +119,36 @@ class RuleViewModel(
     fun service(id: String) {
         val profile = ServiceCatalog.find(id) ?: return
         handle["serviceId"] = id
+        handle["packageName"] = null
+        handle["appDisplayName"] = null
         handle["customSelected"] = false
         handle["domain"] = profile.primaryDomain
         mutable.update {
             it.copy(
                 domain = profile.primaryDomain,
                 serviceId = id,
+                packageName = null,
+                appDisplayName = null,
+                customSelected = false,
+                domainError = null,
+                targetError = null,
+                error = null,
+            )
+        }
+    }
+
+    fun installedApp(packageName: String, label: String) {
+        handle["serviceId"] = null
+        handle["packageName"] = packageName
+        handle["appDisplayName"] = label
+        handle["customSelected"] = false
+        handle["domain"] = ""
+        mutable.update {
+            it.copy(
+                domain = "",
+                serviceId = null,
+                packageName = packageName,
+                appDisplayName = label,
                 customSelected = false,
                 domainError = null,
                 targetError = null,
@@ -128,14 +158,20 @@ class RuleViewModel(
     }
 
     fun customWebsite() {
-        val domain = if (mutable.value.serviceId != null) "" else mutable.value.domain
+        val domain =
+            if (mutable.value.serviceId != null || mutable.value.packageName != null) ""
+            else mutable.value.domain
         handle["serviceId"] = null
+        handle["packageName"] = null
+        handle["appDisplayName"] = null
         handle["customSelected"] = true
         handle["domain"] = domain
         mutable.update {
             it.copy(
                 domain = domain,
                 serviceId = null,
+                packageName = null,
+                appDisplayName = null,
                 customSelected = true,
                 domainError = null,
                 targetError = null,
@@ -146,12 +182,16 @@ class RuleViewModel(
 
     fun clearTarget() {
         handle["serviceId"] = null
+        handle["packageName"] = null
+        handle["appDisplayName"] = null
         handle["customSelected"] = false
         handle["domain"] = ""
         mutable.update {
             it.copy(
                 domain = "",
                 serviceId = null,
+                packageName = null,
+                appDisplayName = null,
                 customSelected = false,
                 domainError = null,
                 targetError = null,
@@ -184,10 +224,12 @@ class RuleViewModel(
         if (value.loading || value.saving) return
         val profile = ServiceCatalog.find(value.serviceId)
         val targetError =
-            if (profile == null && !value.customSelected) "Choose an app or custom website."
+            if (profile == null && value.packageName == null && !value.customSelected)
+                "Choose an app or custom website."
             else null
         val domain =
             if (profile != null) Result.success(profile.primaryDomain)
+            else if (value.packageName != null) Result.success("")
             else if (value.customSelected) runCatching { DomainNormalizer.normalize(value.domain) }
             else Result.failure(IllegalArgumentException("Choose what you want to block."))
         val timeError =
@@ -215,6 +257,8 @@ class RuleViewModel(
                         daysMask = value.days,
                         enabled = value.enabled,
                         serviceId = profile?.id,
+                        packageName = value.packageName,
+                        appDisplayName = value.appDisplayName,
                     )
                 )
                 mutable.update { it.copy(saving = false, completion = RuleCompletion.SAVED) }
