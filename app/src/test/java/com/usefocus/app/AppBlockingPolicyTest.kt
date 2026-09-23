@@ -48,8 +48,8 @@ class AppBlockingPolicyTest {
     }
 
     @Test
-    fun allSixAppsAndTheirVariantsAreBlockedOnlyDuringTheirSchedule() {
-        assertEquals(setOf("instagram", "whatsapp", "facebook", "x", "tiktok", "youtube"),
+    fun allPopularAppsAndTheirVariantsAreBlockedOnlyDuringTheirSchedule() {
+        assertEquals(setOf("instagram", "facebook", "x", "tiktok", "youtube"),
             ServiceCatalog.popular.map { it.id }.toSet())
         for (service in ServiceCatalog.popular) {
             val scheduled = rule(service.id, start = 720, end = 780)

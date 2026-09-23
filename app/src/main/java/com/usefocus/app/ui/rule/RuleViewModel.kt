@@ -20,6 +20,11 @@ enum class RuleCompletion {
     DELETED,
 }
 
+enum class TargetTab {
+    APP,
+    WEBSITE,
+}
+
 data class RuleState(
     val domain: String = "",
     val serviceId: String? = null,
@@ -49,6 +54,9 @@ data class RuleState(
                     (customSelected && runCatching { DomainNormalizer.normalize(domain) }.isSuccess)) &&
                 start != end &&
                 days != 0
+
+    val targetTab: TargetTab
+        get() = if (customSelected) TargetTab.WEBSITE else TargetTab.APP
 }
 
 /** Restores an unfinished edit without replacing explicit cleared values with database values. */
@@ -157,27 +165,45 @@ class RuleViewModel(
         }
     }
 
-    fun customWebsite() {
-        val domain =
-            if (mutable.value.serviceId != null || mutable.value.packageName != null) ""
-            else mutable.value.domain
-        handle["serviceId"] = null
-        handle["packageName"] = null
-        handle["appDisplayName"] = null
-        handle["customSelected"] = true
-        handle["domain"] = domain
-        mutable.update {
-            it.copy(
-                domain = domain,
-                serviceId = null,
-                packageName = null,
-                appDisplayName = null,
-                customSelected = true,
-                domainError = null,
-                targetError = null,
-                error = null,
-            )
+    fun selectTab(tab: TargetTab) {
+        if (tab == TargetTab.WEBSITE) {
+            val domain =
+                if (mutable.value.serviceId != null || mutable.value.packageName != null) ""
+                else mutable.value.domain
+            handle["serviceId"] = null
+            handle["packageName"] = null
+            handle["appDisplayName"] = null
+            handle["customSelected"] = true
+            handle["domain"] = domain
+            mutable.update {
+                it.copy(
+                    domain = domain,
+                    serviceId = null,
+                    packageName = null,
+                    appDisplayName = null,
+                    customSelected = true,
+                    domainError = null,
+                    targetError = null,
+                    error = null,
+                )
+            }
+        } else {
+            handle["customSelected"] = false
+            handle["domain"] = ""
+            mutable.update {
+                it.copy(
+                    customSelected = false,
+                    domain = "",
+                    domainError = null,
+                    targetError = null,
+                    error = null,
+                )
+            }
         }
+    }
+
+    fun customWebsite() {
+        selectTab(TargetTab.WEBSITE)
     }
 
     fun clearTarget() {
@@ -223,10 +249,13 @@ class RuleViewModel(
         val value = mutable.value
         if (value.loading || value.saving) return
         val profile = ServiceCatalog.find(value.serviceId)
-        val targetError =
-            if (profile == null && value.packageName == null && !value.customSelected)
-                "Choose an app or custom website."
-            else null
+        val targetError = when {
+            value.targetTab == TargetTab.APP && profile == null && value.packageName == null ->
+                "Choose a popular app or an installed app."
+            value.targetTab == TargetTab.WEBSITE && value.domain.isBlank() ->
+                "Enter a website domain to block."
+            else -> null
+        }
         val domain =
             if (profile != null) Result.success(profile.primaryDomain)
             else if (value.packageName != null) Result.success("")

@@ -35,17 +35,6 @@ object ServiceCatalog {
                 androidPackages = setOf("com.instagram.android", "com.instagram.lite"),
             ),
             ServiceProfile(
-                id = "whatsapp",
-                name = "WhatsApp",
-                monogram = "W",
-                domains = linkedSetOf(
-                    "whatsapp.com",
-                    "whatsapp.net",
-                    "wa.me",
-                ),
-                androidPackages = setOf("com.whatsapp", "com.whatsapp.w4b"),
-            ),
-            ServiceProfile(
                 id = "facebook",
                 name = "Facebook",
                 monogram = "f",
@@ -117,7 +106,22 @@ object ServiceCatalog {
             ),
         )
 
-    fun find(id: String?) = popular.firstOrNull { it.id == id }
+    private val legacy =
+        listOf(
+            ServiceProfile(
+                id = "whatsapp",
+                name = "WhatsApp",
+                monogram = "W",
+                domains = linkedSetOf(
+                    "whatsapp.com",
+                    "whatsapp.net",
+                    "wa.me",
+                ),
+                androidPackages = setOf("com.whatsapp", "com.whatsapp.w4b"),
+            ),
+        )
+
+    fun find(id: String?) = popular.firstOrNull { it.id == id } ?: legacy.firstOrNull { it.id == id }
 
     fun domainsFor(rule: BlockRule): Set<String> =
         find(rule.serviceId)?.domains ?: if (rule.domain.isNotBlank()) setOf(rule.domain) else emptySet()

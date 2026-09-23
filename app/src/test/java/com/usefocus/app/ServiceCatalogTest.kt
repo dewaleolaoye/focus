@@ -17,7 +17,7 @@ class ServiceCatalogTest {
 
     @Test
     fun popularProfilesHaveStableUniqueTargets() {
-        assertEquals(6, ServiceCatalog.popular.map { it.id }.distinct().size)
+        assertEquals(5, ServiceCatalog.popular.map { it.id }.distinct().size)
         ServiceCatalog.popular.forEach { profile ->
             assertTrue(profile.name.isNotBlank())
             assertTrue(profile.domains.isNotEmpty())

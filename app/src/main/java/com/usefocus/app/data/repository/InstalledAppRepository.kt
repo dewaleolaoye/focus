@@ -30,6 +30,7 @@ class InstalledAppRepository(private val context: Context) {
         for (resolveInfo in activities) {
             val pkg = resolveInfo.activityInfo?.packageName ?: continue
             if (pkg == ownPackage || !seen.add(pkg)) continue
+            if (isIgnoredPackage(pkg)) continue
             val label = runCatching {
                 resolveInfo.loadLabel(pm).toString().trim()
             }.getOrNull()
@@ -42,5 +43,20 @@ class InstalledAppRepository(private val context: Context) {
         }
 
         apps.sortedBy { it.label.lowercase(Locale.ROOT) }
+    }
+
+    private fun isIgnoredPackage(pkg: String): Boolean {
+        val lower = pkg.lowercase(Locale.ROOT)
+        return lower.startsWith("com.android.stk") ||
+            lower.contains(".stk") ||
+            lower.startsWith("com.samsung.android.ar") ||
+            lower.startsWith("com.samsung.android.app.reminder") ||
+            lower.startsWith("com.samsung.android.beaconmanager") ||
+            lower.contains(".overlay.") ||
+            lower.contains(".wallpaper.") ||
+            lower == "com.android.traceur" ||
+            lower == "com.google.android.feedback" ||
+            lower == "com.android.shell" ||
+            lower == "com.android.keyguard"
     }
 }

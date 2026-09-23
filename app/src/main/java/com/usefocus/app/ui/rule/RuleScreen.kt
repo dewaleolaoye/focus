@@ -28,8 +28,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -43,6 +45,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -154,70 +159,151 @@ fun RuleScreen(
             item {
                 SectionCard(
                     title = "What do you want to block?",
-                    subtitle = "Choose one app or a website.",
+                    subtitle = "Choose an app or website.",
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            ServiceCatalog.popular.forEach { profile ->
-                                ServiceCard(
-                                    profile = profile,
-                                    selected = state.serviceId == profile.id,
-                                    enabled = !state.loading && !state.saving,
-                                    onClick = { vm.service(profile.id) },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                        }
-                        if (state.packageName != null) {
-                            SelectedAppHeader(
-                                packageName = state.packageName,
-                                appName = state.appDisplayName ?: state.packageName,
-                                change = { showAppPicker = true },
-                            )
-                        } else if (state.customSelected) {
-                            SelectedWebsiteHeader(change = vm::clearTarget)
-                            OutlinedTextField(
-                                value = state.domain,
-                                onValueChange = vm::domain,
-                                label = { Text("Website") },
-                                placeholder = { Text("goal.com") },
-                                singleLine = true,
-                                isError = state.domainError != null,
-                                supportingText = {
-                                    Text(
-                                        state.domainError
-                                            ?: "Example: goal.com or https://goal.com · subdomains included"
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                            SegmentedButton(
+                                selected = state.targetTab == TargetTab.APP,
+                                onClick = { vm.selectTab(TargetTab.APP) },
+                                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                                icon = {
+                                    Icon(
+                                        Icons.Rounded.PhoneAndroid,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
                                     )
                                 },
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        keyboardType = KeyboardType.Uri,
-                                        imeAction = ImeAction.Next,
-                                    ),
-                                keyboardActions =
-                                    KeyboardActions(
-                                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                                    ),
+                                label = { Text("App") },
                                 enabled = !state.loading && !state.saving,
-                                modifier = Modifier.fillMaxWidth(),
                             )
-                            Text(
-                                "Blocking works at the domain level. Paths such as /news cannot be blocked separately.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            SegmentedButton(
+                                selected = state.targetTab == TargetTab.WEBSITE,
+                                onClick = { vm.selectTab(TargetTab.WEBSITE) },
+                                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                                icon = {
+                                    Icon(
+                                        Icons.Rounded.Language,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                },
+                                label = { Text("Website") },
+                                enabled = !state.loading && !state.saving,
                             )
+                        }
+
+                        if (state.targetTab == TargetTab.APP) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    "Popular apps",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    ServiceCatalog.popular.forEach { profile ->
+                                        ServiceCard(
+                                            profile = profile,
+                                            selected = state.serviceId == profile.id,
+                                            enabled = !state.loading && !state.saving,
+                                            onClick = { vm.service(profile.id) },
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (state.packageName != null) {
+                                SelectedAppHeader(
+                                    packageName = state.packageName,
+                                    appName = state.appDisplayName ?: state.packageName,
+                                    change = { showAppPicker = true },
+                                )
+                            } else {
+                                OutlinedCard(
+                                    onClick = { showAppPicker = true },
+                                    enabled = !state.loading && !state.saving,
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                        ) {
+                                            Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    Icons.Rounded.Apps,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(22.dp),
+                                                )
+                                            }
+                                        }
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                "Other installed apps",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                            Text(
+                                                "Select from your device",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                        }
+                                        Icon(Icons.Rounded.ChevronRight, contentDescription = null)
+                                    }
+                                }
+                            }
                         } else {
-                            InstalledAppCard(
-                                enabled = !state.loading && !state.saving,
-                                onClick = { showAppPicker = true },
-                            )
-                            CustomWebsiteCard(
-                                enabled = !state.loading && !state.saving,
-                                onClick = vm::customWebsite,
-                            )
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedTextField(
+                                    value = state.domain,
+                                    onValueChange = vm::domain,
+                                    label = { Text("Website domain") },
+                                    placeholder = { Text("goal.com") },
+                                    leadingIcon = {
+                                        Icon(Icons.Rounded.Language, contentDescription = null)
+                                    },
+                                    singleLine = true,
+                                    isError = state.domainError != null,
+                                    supportingText = {
+                                        Text(
+                                            state.domainError
+                                                ?: "Example: goal.com or https://goal.com · subdomains included"
+                                        )
+                                    },
+                                    keyboardOptions =
+                                        KeyboardOptions(
+                                            keyboardType = KeyboardType.Uri,
+                                            imeAction = ImeAction.Next,
+                                        ),
+                                    keyboardActions =
+                                        KeyboardActions(
+                                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                                        ),
+                                    enabled = !state.loading && !state.saving,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                                Text(
+                                    "Blocking works at the domain level. Paths such as /news cannot be blocked separately.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                         state.targetError?.let { InlineError(it) }
                     }
@@ -457,58 +543,6 @@ private fun ServiceCard(
 }
 
 @Composable
-private fun CustomWebsiteCard(enabled: Boolean, onClick: () -> Unit) {
-    OutlinedCard(
-        onClick = onClick,
-        enabled = enabled,
-        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
-                Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Language, contentDescription = null)
-                }
-            }
-            Column {
-                Text("Custom website", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("Block a domain and its subdomains", style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-}
-
-@Composable
-private fun InstalledAppCard(enabled: Boolean, onClick: () -> Unit) {
-    OutlinedCard(
-        onClick = onClick,
-        enabled = enabled,
-        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
-                Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Apps, contentDescription = null)
-                }
-            }
-            Column {
-                Text("Choose installed app", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("Select any app installed on this device", style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-}
-
-@Composable
 private fun SelectedAppHeader(
     packageName: String,
     appName: String,
@@ -541,28 +575,6 @@ private fun SelectedAppHeader(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            TextButton(onClick = change) { Text("Change") }
-        }
-    }
-}
-
-@Composable
-private fun SelectedWebsiteHeader(change: () -> Unit) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Rounded.Language, contentDescription = null)
-            Text(
-                "Website selected",
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f).padding(start = 10.dp),
-            )
             TextButton(onClick = change) { Text("Change") }
         }
     }
